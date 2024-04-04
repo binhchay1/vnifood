@@ -3,8 +3,8 @@ Contributors: mekshq
 Donate link: https://mekshq.com/
 Tags: widget, sidebar, author, user, avatar, profile
 Requires at least: 3.0
-Tested up to: 5.2
-Stable tag: 1.1.1
+Tested up to: 6.1
+Stable tag: 1.1.4
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl.html
 
@@ -46,6 +46,16 @@ You can see Smart Author Widget live example on our [Typology theme demo website
 2. Widget in action
 
 == Changelog ==
+
+= 1.1.4 =
+* WP 6.3 compatibility tested
+* Patched a minor security issue
+
+= 1.1.3 =
+* Fixed: Compatibility with Widget editor in WP 5.8
+
+= 1.1.2 =
+* Added: Notification for meks plugins
 
 = 1.1.1 =
 * Fixed: Co-authors were being displayed on author archives (appeared in version 1.1)

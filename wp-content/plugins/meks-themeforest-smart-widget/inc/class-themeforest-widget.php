@@ -113,7 +113,10 @@ class MKS_ThemeForest_Widget extends WP_Widget {
 		$ref = !empty( $instance['ref'] ) ? '?ref='.$instance['ref'] : '';
 		$target = !empty( $instance['target'] ) ? $instance['target'] : '_blank';
 		$nofollow = $instance['nofollow'] ? 'rel="nofollow"' : '';
-?>
+		$noopener = $target == '_blank' ? 'rel="noopener"' : '';
+
+		?>
+
 		<ul class="mks_themeforest_widget_ul">
 		    <?php foreach ( $items as $item ) : ?>
 		    <li><a href="<?php echo esc_url( $item['url'].$ref ); ?>" title="<?php echo esc_attr( $item['item'] ); ?>" target="<?php echo $target; ?>" <?php echo $nofollow; ?>><img width="80" height="80" src="<?php echo esc_url( $item['thumbnail'] );?>" alt="<?php echo esc_attr( $item['item'] ); ?> "/></a></li>
@@ -122,7 +125,7 @@ class MKS_ThemeForest_Widget extends WP_Widget {
 
 		<?php if ( !empty( $instance['more_link_url'] ) ): ?>
 			 <?php $more_text = isset( $instance['more_link_txt'] ) && !empty( $instance['more_link_txt'] ) ? $instance['more_link_txt'] : __( 'View more', 'meks-themeforest-smart-widget' ); ?>
-			  <p class="mks_read_more"><a href="<?php echo esc_url( $instance['more_link_url'] ); ?>" target="_blank" class="more" <?php echo $nofollow; ?>><?php echo  esc_html( $more_text ); ?></a></p>
+			  <p class="mks_read_more"><a href="<?php echo esc_url( $instance['more_link_url'] ); ?>" target="_blank" class="more" <?php echo esc_attr( $nofollow ); ?> <?php echo esc_attr( $noopener ); ?>><?php echo  esc_html( $more_text ); ?></a></p>
 			 <?php endif; ?>
 		<?php endif; ?>
 		

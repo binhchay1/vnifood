@@ -12,9 +12,8 @@ class MKS_Flickr_Widget extends WP_Widget {
 		$control_ops = array( 'id_base' => 'mks_flickr_widget' );
 		parent::__construct( 'mks_flickr_widget', __( 'Meks Flickr Widget', 'meks-simple-flickr-widget' ), $widget_ops, $control_ops );
 
-		if ( !is_admin() ) {
-			add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_styles' ) );
-		}
+		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_styles' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_styles' ) );
 
 		$this->defaults = array(
 			'title' => 'Flickr',
@@ -61,7 +60,7 @@ class MKS_Flickr_Widget extends WP_Widget {
 
 			echo '<ul class="flickr">';
 			foreach ( $photos as $photo ) {
-				echo '<li><a href="'.esc_url( $photo['img_url'] ).'" title="'.esc_attr( $photo['title'] ).'" target="_blank"><img src="'.esc_attr( $photo['img_src'] ).'" alt="'.esc_attr( $photo['title'] ).'" '.$style.'/></a></li>';
+				echo '<li><a href="'.esc_url( $photo['img_url'] ).'" title="'.esc_attr( $photo['title'] ).'" target="_blank" rel="noopener"><img src="'.esc_attr( $photo['img_src'] ).'" alt="'.esc_attr( $photo['title'] ).'" '.$style.'/></a></li>';
 			}
 			echo '</ul>';
 			echo '<div class="clear"></div>';

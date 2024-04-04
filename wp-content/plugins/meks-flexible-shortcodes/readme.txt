@@ -3,8 +3,8 @@ Contributors: mekshq
 Donate link: http://mekshq.com/
 Tags: shortcode, shortcodes, tabs, toggles, accordions, social, buttons, dropcaps, icons
 Requires at least: 3.5
-Tested up to: 5.2
-Stable tag: 1.3.1
+Tested up to: 6.3
+Stable tag: 1.3.6
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl.html
 
@@ -127,6 +127,28 @@ For any questions, error reports and suggestions please visit http://mekshq.com/
 2. Shortcodes in action - example
 
 == Changelog ==
+
+
+= 1.3.6 =
+* WP 6.3 compatibility tested
+* Patched a minor security issue
+
+
+= 1.3.5 =
+
+* Fixed: Conflict with UpDraft plugin popup interface
+* Improved: A couple of security tweaks and improvements
+
+= 1.3.4 =
+
+* Fixed: PHP 8 notice
+
+= 1.3.3 =
+* Improved: jQuery load event
+* Fixed: Updraft plus CSS conflicts
+
+= 1.3.2 =
+* Added: Notification for Meks plugins
 
 = 1.3.1 =
 

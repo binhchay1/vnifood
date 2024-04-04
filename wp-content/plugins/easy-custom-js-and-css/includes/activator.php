@@ -10,7 +10,6 @@ if(!defined('WPINC')) {
 	die;
 }
 
-
 if(!class_exists( 'EasyCustomJsAndCss_Activator')) :
 
 class EasyCustomJsAndCss_Activator {
@@ -49,11 +48,48 @@ class EasyCustomJsAndCss_Activator {
 		
 		update_option(EASYJC_PLUGIN_NAME . '_db_version', EASYJC_DB_VERSION, false);
 		
+		$this->update_data();
+		
 		if( get_option(EASYJC_PLUGIN_NAME . '_activated') == false ) {
 			$this->install_data();
 		}
 		
 		update_option(EASYJC_PLUGIN_NAME . '_activated', time(), false);
+	}
+	
+	public function update_data() {
+		global $wpdb;
+		
+		//===========
+		// Add support Emoji
+		$table = $wpdb->prefix . EASYJC_PLUGIN_NAME;
+		
+		$sql = 'ALTER TABLE ' . $table . ' DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci';
+		$wpdb->query($sql);
+		
+		$sql = 'ALTER TABLE ' . $table . ' MODIFY title text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci';
+		$wpdb->query($sql);
+		
+		$sql = 'ALTER TABLE ' . $table . ' MODIFY data longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci';
+		$wpdb->query($sql);
+		
+		$sql = 'ALTER TABLE ' . $table . ' MODIFY type varchar(8) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci';
+		$wpdb->query($sql);
+		
+		$sql = 'ALTER TABLE ' . $table . ' MODIFY options text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci';
+		$wpdb->query($sql);
+		
+		//===========
+		$table = $wpdb->prefix . EASYJC_PLUGIN_NAME . '_filters';
+		
+		$sql = 'ALTER TABLE ' . $table . ' DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci';
+		$wpdb->query($sql);
+		
+		$sql = 'ALTER TABLE ' . $table . ' MODIFY title text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci';
+		$wpdb->query($sql);
+		
+		$sql = 'ALTER TABLE ' . $table . ' MODIFY data longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci';
+		$wpdb->query($sql);
 	}
 	
 	public function install_data() {

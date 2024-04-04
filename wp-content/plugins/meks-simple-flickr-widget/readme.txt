@@ -3,8 +3,8 @@ Contributors: mekshq
 Donate link: https://mekshq.com/
 Tags: flickr, widget, sidebar, photos, photostream
 Requires at least: 3.0
-Tested up to: 5.2
-Stable tag: 1.1.3
+Tested up to: 6.3
+Stable tag: 1.3
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl.html
 
@@ -45,11 +45,20 @@ For any questions, error reports and suggestions please visit https://mekshq.com
 
 == Changelog ==
 
+= 1.3 =
+* WP 6.3 compatibility tested
+* Patched a minor security issue
+
+= 1.2 =
+* WP 5.8 compatibility
+
+= 1.1.4 =
+* Added notification for meks plugins
+
 = 1.1.3 =
 * Added an option to randomize photos on display 
 * Added support for websites using https protocol
 * Improved: Now you can use "0" (zero) as height value to enable "auto" height for photos
-
 
 = 1.1.2 =
 * Full compatibility with WordPress 4.3

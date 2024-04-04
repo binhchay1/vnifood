@@ -1701,6 +1701,7 @@ if ( !function_exists( 'vce_get_fa_home_args' ) ) :
 			$q_args['post_type'] = $meta['fa_post_type'];
 			$post_type_with_taxonomies = vce_get_post_type_with_taxonomies( $meta['fa_post_type'] );
 			$q_args['ignore_sticky_posts'] = 1;
+			$q_args['category__not_in'] = 1;
 
 			if ( !empty( $meta['fa_manual'] ) ) {
 				$q_args['posts_per_page'] = absint( count( $meta['fa_manual'] ) );

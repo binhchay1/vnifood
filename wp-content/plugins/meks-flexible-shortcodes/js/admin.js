@@ -62,4 +62,19 @@ var mks_shortcode_modal_obj;
         jQuery('body').addClass('modal-open');
     }
 
+    jQuery(document).ready(function() {
+        jQuery('body').on('click', '.meks-notice .notice-dismiss', function(){
+
+            jQuery.ajax( {
+                url: ajaxurl,
+                method: "POST",
+                data: {
+                    action: 'meks_remove_notification'
+                }
+            });
+
+        });
+
+    });
+
 })();

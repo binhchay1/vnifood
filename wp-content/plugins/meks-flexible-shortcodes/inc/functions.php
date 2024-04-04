@@ -839,11 +839,11 @@ function mks_generate_fontawesome_icons_picker() {
   echo '<ul class="mks_icon_list">';
   echo '<p><a href="http://fortawesome.github.com/Font-Awesome/" target="_blank">Font Awesome Icons</a></p>';
   foreach ( $icons_font_awsm as $class => $icon ) {
-    echo '<li><a href="#" mks-data-icon="'.$class.'" mks-icon-type="fa"><i class="fa '.$class.'"></i></a></li>';
+    echo '<li><a href="#" mks-data-icon="'.esc_attr($class).'" mks-icon-type="fa"><i class="fa '.esc_attr($class).'"></i></a></li>';
   }
   echo '<p><a href="http://graphicburger.com/simple-line-icons-webfont/" target="_blank">Simple Line Icons</a></p>';
   foreach ( $icons_simple_line as $class => $icon ) {
-    echo '<li><a href="#" mks-data-icon="'.$class.'" mks-icon-type="sl"><i class="'.$class.'"></i></a></li>';
+    echo '<li><a href="#" mks-data-icon="'.esc_attr($class).'" mks-icon-type="sl"><i class="'.esc_attr($class).'"></i></a></li>';
   }
 
   echo '</ul>';
@@ -910,7 +910,7 @@ function mks_generate_social_icons_picker() {
     echo '<div class="mks_icon_data_preview"></div>';
     echo '<ul class="mks_icon_list">';
     foreach ( $social as $class => $icon ) {
-        echo '<li><a href="#" class="mks_ico '.$class.'_ico" data-icon="'.$class.'" title="'.$icon.'">'.$icon.'</a></li>';
+        echo '<li><a href="#" class="mks_ico '.esc_attr($class).'_ico" data-icon="'.esc_attr($class).'" title="'.esc_attr($icon).'">'.esc_html($icon).'</a></li>';
     }
     echo '</ul>';
     echo '</div>';
@@ -985,4 +985,4 @@ if ( !function_exists('mks_generate_bootstrap_classes')) :
         return $columns[$column];
     }
 endif;
-?>
+

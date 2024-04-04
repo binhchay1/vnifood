@@ -1,531 +1,197 @@
-﻿=== WP Ajaxify Comments ===
-Contributors: weweave
-Donate link: https://weweave.net/s/wp-ajaxify-comments
-Tags: AJAX, comments, comment, themes, theme
-Requires at least: 3.1.3
-Tested up to: 5.1.0
-Stable tag: 1.6.1
-License: GPLv2
+﻿=== Ajaxify Comments - Lazy Load and No Reload Comments ===
+Contributors: ronalfy
+Tags: AJAX, comments, lazy load, errors, refresh
+Requires at least: 5.0
+Tested up to: 6.4
+Stable tag: 2.1.1
+Requires PHP: 7.2
+License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
+Donate link: https://github.com/sponsors/DLXPlugins
 
-WP Ajaxify Comments hooks into your comment form and adds AJAX functionality - no page reloads required when validating, posting or updating comments
+Ajaxify Comments hooks into WordPress comments and allows comment posting without reloading the page. It supports lazy loading, and allows comments to load in the background. This can help speed up your page load time.
 
 == Description ==
 
-When submitting the comment form, WordPress by default reloads the entire page. In the case of an error (e.g. an invalid email address or an empty comment field) the error message is shown on top of a new (blank) screen and the user has to use the browser's back button to correct his inputs before posting the comment again.
+Skip page reloads and separate error screens when posting comments. Ajaxify Comments hooks into your native WordPress comment system and allows comment posting without a page reload. Lazy loading is also supported, which can help speed up your page load time.
 
-The WP Ajaxify Comments WordPress plugin hooks into any WordPress theme and adds AJAX functionality to the comment form: When the user submits his comment, the plugin sends the data to the WordPress backend without reloading the entire page. In the case of an error, the plugin shows an overlay containing the error message so that the user can correct his comment without navigating back. If the comment has been posted successfully, the plugin adds the (new) comment to the list of existing comments without leaving the page and shows an information overlay.
+=== TLDR ===
 
-Moreover this plugin includes an option to automatically refresh the comments on the current page while the user stays on your page without requiring a page reload.
+<a href="https://docs.dlxplugins.com/v/ajaxify-comments/first-time-users/getting-started">Getting Started</a> | <a href="https://github.com/sponsors/DLXPlugins">Sponsor Us</a> | <a href="https://app.instawp.io/launch?t=ajaxify-comments&d=v2">Launch an Instant Demo</a> | <a href="https://dlxplugins.com/plugins/ajaxify-comments">Ajaxify Home</a>
 
-**tl;dr**
+Ajaxify Comments hooks into your theme and improves the usability of the comment form by validating and adding comments without the need of page reloads. Users can remain on the page and interact with new comments as they're posted. This plugin also supports lazy loading of comments, which can help speed up your page load time.
 
-WP Ajaxify Comments hooks into your theme and improves the usability of the comment form by validating and adding comments without the need of page reloads.
 
-**Live demo**
+=== Introduction ===
 
-You can try out a live demo in <a target="_blank" href="https://weweave.net/s/wp-ajaxify-comments/demo">our demo WordPress environment</a>.
+When submitting the comment form, WordPress by default reloads the entire page. This can be a disorienting experience for the user. In the case of errors in the comment (invalid email, duplicate comment, empty comment), these often require a separate error screen and the user has to use the back button to edit their comment. This can be a frustrating experience for the user. Adding to that, comments can be resource intensive, and can slow down your page load time.
 
-**Technical note**
+With Ajaxify Comments, comments are posted without a page reload. If there are errors, the error message is shown immediately, so the user can correct their comment.
+
+Ajaxify Comments also comes with lazy loading of the comments section. For a page with a lot of comments, this can speed things up considerably. You can load comments when the DOM is ready or when the comment section is scrolled into view.
+
+Moreover this plugin includes an option to automatically refresh the comments on the current page while the user stays on your page without requiring a page reload. This can be helpful in busy comment sections where reply response time is important.
+
+=== Quick Resource Links ===
+
+Here are some helpful links to help you get started with Ajaxify Comments:
+
+1. <a href="https://docs.dlxplugins.com/v/ajaxify-comments/first-time-users/getting-started">Getting Started Guide</a>
+2. <a href="https://docs.dlxplugins.com/v/ajaxify-comments/advanced-topics/lazy-loading-comments">Lazy Loading Comments</a>
+3. <a href="https://docs.dlxplugins.com/v/ajaxify-comments/first-time-users/menu-helper">Menu Helper and Selectors</a>
+4. <a href="https://docs.dlxplugins.com/v/ajaxify-comments/advanced-topics/wpml-and-translations">Translating Using WPML</a>
+
+=== Requirements and Compatibility ===
+
+Please use the native WordPress comment system with Ajaxify Comments.
+
+The plugin has integrations with:
+
+1. <a href="https://docs.dlxplugins.com/v/ajaxify-comments/plugin-integrations/confetti">Confetti</a> - Show confetti when a comment is posted.
+2. <a href="https://docs.dlxplugins.com/v/ajaxify-comments/plugin-integrations/comment-edit-core">Comment Edit Core</a> - Allow users to edit their comments.
+
+The following themes are supported out of the box:
+
+1. <a href="https://wordpress.org/themes/astra/">Astra</a>
+2. Genesis
+3. <a href="https://wordpress.org/themes/ollie/">Ollie</a>
+4. Twenty Ten - Twenty Twenty Three
+
+Ajaxify Comments should be compatible with most block themes. If <a href="https://docs.dlxplugins.com/v/ajaxify-comments/first-time-users/menu-helper">Menu Helper</a> can't find the selectors, please leave a support request.
+
+=== Technical Note ===
 
 Since the plugin hooks into the theme on client-side to intercept the comment form submit process, and to add new comments without reloading the page, the plugin needs to access the DOM nodes using jQuery selectors. The plugin comes with default values for these selectors that were successfully tested with WordPress' default themes "Twenty Ten", "Twenty Eleven", "Twenty Twelve", "Twenty Thirteen", "Twenty Fourteen", "Twenty Fifteen", "Twenty Sixteen". If required, the selectors can be customized to match your theme in the plugin's settings.
 
-**Important**
+> <a href="https://docs.dlxplugins.com/v/ajaxify-comments/first-time-users/menu-helper">Menu Helper</a> is available to help you find the theme's selectors.
 
-If the plugin does not work out of the box with your theme, custom selectors could be defined in the plugin's settings. If you don't succeed in configuring the proper selectors, we'd be happy to support you! Check our <a href="https://weweave.net/s/wp-ajaxify-comments/support">support page</a> for further information on individual assistance. The plugin is highly customizable and *We're aware of only a few conflicts with any themes or other plugins that cannot be resolved* (see "Known incompatibilities" in the FAQ section).
+=== Features ===
 
-**Some features of the plugin**
+Ajaxify Comments is community supported. If you would like to add or change anything about the plugin, please consider assisting with the development on <a href="https://github.com/DLXPlugins/wp-ajaxify-comments">GitHub</a>.
 
-* Actively developed and supported
-* Validating and adding comments without page reloads
-* Seamless integration with almost every theme (default options should work with most themes)
-* i18n support (included localizations for ar, ca, da-DK, de-DE, es-ES, fa-IR, fr-FR, he-IL, hu-HU, nl-NL, pl-PL, pt-BR, ru-RU, sk-SK, tr-TR, uk, vi-VN, zh-CN)
-* Support for customizing (default) WordPress messages
-* Support for threaded comments
-* Support for comments that await moderation
-* Support for pages with multiple comment forms
-* Compatibility with comment spam protection plugins and other plugins that extend/manipulate the comment form
-* Admin frontend to customize the look and feel
-* (Automatic) fallback mode uses complete page reloads if the plugin is not configured properly or any incompatibility is detected
-* Client-side JavaScript API (see FAQ for more details)
-* Automatically updating comments while user stays on page
-* Option to load comments asynchronously with secondary AJAX request if page contains more than a specified number of comments
-* Option to save bandwidth for AJAX responses
-* Debug mode to support troubleshooting
+* Post comments without a page reload.
+* Show error messages without a page reload.
+* Lazy load comments.
+* Automatically refresh comments.
+* Comment form validation.
+* Support for pages with multiple comment forms.
+* Support for threaded and moderated comments.
+* Compatible with most spam plugins.
+* Menu Helper to help you find the right selectors for your theme.
+* Appearance preview to see how the plugin will look on your site.
+* Simulate Ajaxify Comments enabled or disabled for testing and to compare the difference.
+* Translate and customize the default WordPress comment messages.
 
+=== Questions/Help? ===
 
-== Screenshots ==
+Please use the <a href="https://wordpress.org/support/plugin/wp-ajaxify-comments">support forum</a> to ask questions or to report issues.
 
-1. Info overlay after the comment has successfully been posted
-2. Error overlay with error message when posting a comment failed
-3. Settings page (for customizing the plugin)
+> Most questions can be resolved by checking out our docs site. <a href="https://docs.dlxplugins.com/v/ajaxify-comments">https://docs.dlxplugins.com/v/ajaxify-comments</a> - the Search is AI, so it should be able to find what you're looking for.
 
+=== Credits ===
+
+This plugin was initially developed by Jan Jonas starting in 2012. Company <a href="https://weweave.net/">weweave</a> maintained the plugin from 2014-2022.
 
 == Installation ==
 
-1. Upload wp-ajaxify-comments.zip to your WordPress plugins directory, usually `wp-content/plugins/` and unzip the file. It will create a `wp-content/plugins/wp-ajaxify-comments/` directory.
-1. Activate the plugin through the "Plugins" menu in WordPress.
-1. Enable the plugin on the plugin's settings page (Settings > WP Ajaxify Comments)
+See: <a href="https://docs.dlxplugins.com/v/ajaxify-comments/first-time-users/installing-the-plugin">Plugin Installation</a>.
 
+If you have activated the plugin and are just getting started, please see our <a href="https://docs.dlxplugins.com/v/ajaxify-comments/first-time-users/getting-started">Getting Started</a> guide.
+
+== Screenshots ==
+
+1. Ajaxify Comments demonstration with inline error messages displayed
+2. Info overlay after the comment has successfully been posted
+3. Error overlay with error message when posting a comment failed
+4. Settings page (for customizing the plugin)
 
 == Frequently Asked Questions ==
 
-Please find the <a href="https://weweave.net/s/wp-ajaxify-comments/faq" target="_blank">FAQ on weweave.net</a>.
+= I'm using WPML. How do I translate this plugin? =
+
+WPML is an advanced topic, but we've put together a guide to help you <a href="https://docs.dlxplugins.com/v/ajaxify-comments/advanced-topics/wpml-and-translations">translate Ajaxify Comments using WPML</a>.
+
+= Ajaxify Comments isn't working when I install it. What's wrong? =
+
+More than likely you need to set up your selectors. <a href="https://docs.dlxplugins.com/v/ajaxify-comments/advanced-topics/selectors">Selectors</a> are an advanced topic, which is why we've created Menu Helper. Menu Helper will help you find the right selectors for your theme. Please see our <a href="https://docs.dlxplugins.com/v/ajaxify-comments/first-time-users/menu-helper">Menu Helper guide</a> for more information.
+
+= How do I enable lazy loading? =
+
+Lazy Loading is an advanced topic, but we've put together <a href="https://docs.dlxplugins.com/v/ajaxify-comments/advanced-topics/lazy-loading-comments">a guide to help you understand how to enable lazy loading</a>.
 
 == Changelog ==
 
-= 1.6.1 =
-* Optimized JavaScript injection
-
-= 1.6.0 =
-* Removed dependency to PHP session
-
-= 1.5.1 =
-* Fixed "Undefined variable: wpac_options"
-
-= 1.5.0 =
-* Added JavaScript callback "OnAfterPostComment"
-
-= 1.4.1 =
-* Prevent the comment form from being submitted multiple times in parallel
-* Fixed PHP notice "Undefined index: pagenow" (thanks to ravipatel)
-
-= 1.4.0 =
-* Added (expert) option "Enable by query"
-
-= 1.3.0 =
-* Added request parameters "WPACAll", "WPACSkip" and" WPACTake" to query comments
-
-= 1.2.0 =
-* Added (expert) option "Disable cache"
-* Use GET request when updating comments
-
-= 1.1.1 =
-* Fixed link to settings page in admin frontend
-
-= 1.1.0 =
-* Fixed compatibility to WordPress 4.1
-* Changed plugin name from "WP-Ajaxify-Comments" to "WP Ajaxify Comments"
-
-= 1.0.0 =
-* Changed plugin owner to weweave an added professional support
-* Added (expert) option "Base URL" to support reverse proxy configuration
-* Fixed page title update for titles containing UTF-8 characters
-* Typo fix in default localization
-
-= 0.25.0 =
-* Loading comments now updates page title (thanks to Jincheng Shan)
-* OnBeforeSubmitComment callback is now called before submitUrl is extracted
-
-= 0.24.1 =
-* Updated localization for zh-CN (thanks to Jincheng Shan)
-* Added CDATA tag for inline JavaScript (thanks to Jincheng Shan)
-
-= 0.24.0 =
-* Added parameter commentUrl to callbacks OnBeforeUpdateComments and OnAfterUpdateComments
-
-= 0.23.1 =
-* Changed order of links in plugin overview
-* Make sure WPAC._Options is always initialized
-* Bugfix for comment paging links
-
-= 0.23.0 =
-* Added (expert) option "Place scripts in footer"
-* Added option "Comment links selector" to prevent (complete) page loads for comment links on pages if "Break comments into pages [...]" is enabled
-* Bugfix for "Users must be registered and logged in to comment"
-* Fixed PHP Notice for PHP < 5.4.0
-
-= 0.22.0 =
-* Minor optimizations
-* Added (expert) option "Optimize AJAX response" to save bandwidth
-* Fixed JavaScript includes for HTTPS
-
-= 0.21.0 =
-* Added option "Disable scroll to anchor"
-* Fixed paging support and async comment loading for pages where comments are closed
-* Fixed compressed JavaScript file
-* Fixed support for URLs with comments anchor if async comment loading is enabled
-
-= 0.20.0 =
-* Added option "Post container" to support for multiple comment forms per page
-* Added option "Comment pages URL regex" to support none default WordPress comment pages
-
-= 0.19.0 =
-* Added parameter newDom to callbacks OnBeforeUpdateComments and OnAfterUpdateComments
-* Fixed JavaScript error "TypeError: WPAC._Options is undefined" (thanks to Suzanne Ahjira)
-* Fixed JavaScript error in Internet Explorer (thanks to timhengeveld)
-
-= 0.18.1 =
-* Fixed double slashes in JavaScript include (thanks to Mr Press)
-
-= 0.18.0 =
-* Added option to define when to load comments asynchronously with secondary AJAX request
-* Optimized JavaScript includes (use compressed/merged JavaScript file and only include files if they are needed)
-
-= 0.17.3 =
-* Fixed "Undefined index" PHP notice (thanks to fergomez)
-
-= 0.17.2 =
-* Fixed compatibility to wpMandrill (thanks to paddywagon)
-
-= 0.17.1 =
-* "OnAfterUpdateComments" callback is now called after form data has been reset
-
-= 0.17.0 =
-* Added options to customize (default) WordPress messages
-* Disabled (auto) scrolling when comments are updated by "Auto update idle time"
-* Fixed compatibility to jQuery "no conflict mode"
-
-= 0.16.1 =
-* Bugfix for cross-domain scripting detection
-
-= 0.16.0 =
-* Added option "Auto update idle time" to automatically update comments if user is "idle"
-* Updated jQuery blockUI to 2.64
-
-= 0.15.0 =
-* Added option to disable URL updating
-
-= 0.14.3 =
-* Fixed some PHP strict warnings
-
-= 0.14.2 =
-* Fixed compatibility to PHP < 5.4.0
-
-= 0.14.1 =
-* Fixed compatibility to jQuery "no conflict mode"
-
-= 0.14.0 =
-* Added options to customize texts
-* WPAC.RefreshComments() and WPAC.LoadComments() now accept option object (and added option "showLoadingInfo" to suppress loading overlay)
-* Updated jQuery blockUI to 2.61
-* Added jsuri 1.1.1 to avoid query strings with duplicated WPAC fallback parameters
-
-= 0.13.1 =
-* Comment paging now updates browser URL
-* Added localization for da-DK (thanks to Bjarne Maschoreck)
-* Bugfix for themes where comment form is not nested in comment container
-* Bugfix for clearing all settings (thanks to HarroH)
-
-= 0.13.0 =
-* Ajaxified comment paging
-* Improved debug support for cross-domain scripting problems
-
-= 0.12.1 =
-* Hotfix for environments where PHP is not installed as an Apache module
-
-= 0.12.0 =
-* Bug-fix: Options are no longer saved if validation fails
-* Refactored and extended client-side JavaScript API
-* Updated localization for de-DE
-* Added option to load comments asynchronously with secondary AJAX request
-
-= 0.11.0 =
-* Added localization for hu-HU (thanks to Patrik Bagi)
-* Added option to customize the overlay's width
-* Added option to customize the overlay's padding
-
-= 0.10.0 =
-* Added localization for he-LI (thanks to Siman-Tov Yechiel (<a href="http://www.wpstore.co.il" target="_blank">www.wpstore.co.il</a>))
-* Added JavaScript callback ("Before submit comment")
-* Updated jQuery blockUI to 2.57
-
-= 0.9.0 =
-* Added JavaScript method wpac_init() to enable manual client side initialization
-* Optimized SQL queries (thanks to Geleosan)
-* Added validation for "scrollSpeed" option
-* Fixed debug alert message in IE 9
-* Added localization for sk-SK (thanks to Branco, Slovak translation (<a href="http://webhostinggeeks.com/user-reviews/" target="_blank">WebHostingGeeks.com</a>))
-
-= 0.8.0 =
-* Added option to customize the font size
-* Added i18n support for admin frontend
-
-= 0.7.0 =
-* Added JavaScript callback ("Before select elements")
-
-= 0.6.3 =
-* Added localization for ar (thanks to sha3ira)
-
-= 0.6.2 =
-* Fixed some PHP warnings (thanks to petersb)
-* Fixed HTTPS check for ISAPI under IIS
-* Added support for non-standard HTTP port
-* Fixed handling of unexpected/unsupported server responses
-
-= 0.6.1 =
-* Added localization for ru-RU and uk (thanks to Валерий Сиволап)
-
-= 0.6.0 =
-* Added JavaScript callbacks ("Before update comments" and "After update comments")
-
-= 0.5.4 =
-* jQuery 1.7+ compatibility: Use on() or delegate() if available instead of deprecated live() (thanks to tzdk)
-
-= 0.5.3 =
-* Added localization for tr-TR (thanks to Erdinç Aladağ)
-* Added localization for pt-BR (thanks to Leandro Martins Guimarães)
-
-= 0.5.2 =
-* Added localization for fa-IR (thanks to rezach4)
-
-= 0.5.1 =
-* Updated localization for zh-CN (thanks to Liberty Pi)
-* Updated jQuery blockUI to 2.42 (thanks to Mexalim)
-
-= 0.5.0 =
-* Success overlay now supports comments that are awaiting moderation
-* Add "?" when commentUrl has no query string to reload page in case of partial page update fails
-* More detailed debug messages and debug support for Internet Explorer 9
-* Added localization for ca (thanks to guzmanfg)
-
-= 0.4.1 =
-* Added localization for nl-NL (thanks to Daniël Tulp)
-
-= 0.4.0 =
-* Success and error overlays now show default cursor instead of loading cursor
-* Fixed problems for translations containing double quotes
-* Cancel AJAX request if cross-domain scripting is detected
-* Added options to customize the look and feel
-* Added localization for vi-VN (thanks to Nguyễn Hà Duy Phương)
-* Added localization for es-ES (thanks to guzmanfg)
-* Updated localization for de-DE
-
-= 0.3.4 =
-* Added localization for pl-PL (thanks to Jacek Tomaszewski)
-
-= 0.3.3 =
-* Bugfix for Internet Explorer
-
-= 0.3.2 =
-* Added localization for fr-FR (thanks to saymonz)
-
-= 0.3.1 =
-* Added localization for zh-CN (thanks to Liberty Pi)
-
-= 0.3.0 =
-* Added i18n support
-* Added localization for de-DE
-
-= 0.2.1 =
-* Fallback mode reloads page with comment anchor
-* Bug-fix for themes where comment form is nested in comments container (thanks to saymonz)
-
-= 0.2.0 =
-* Added Option "Error Container Selector" to customize the error message extraction
-* Added compatibility with comment spam protection plugins like "NoSpamNX" (thanks to Liberty Pi)
-* Removed timeout for loading overlay (thanks to saymonz)
-
-= 0.1.2 =
-* Fixed compatibility with setting pages of other plugins (thanks to saymonz)
-* Reactivated warning and info notices on admin page "Plugins"
-
-= 0.1.1 =
-* Fixed updating of browser address bar
-
-= 0.1.0 =
-* Support for themes with threaded comments where form tag is not nested in comment container
-* (Smooth) scrolling to new comment after new comment has been posted
-* Update browser address bar to show comment URL after new comment has been posted
-* Abort plugin initialization on pages and posts where comments are not enabled
-* Info overlay when complete page reload is performed in fallback mode
-
-= 0.0.2 =
-* Fixed error with warning and info notices on admin page "Plugins"
-
-= 0.0.1 =
-* Initial release
+= 2.1.1 =
+* Released 2023-12-01
+* Fixing issue with Ajaxify loading on all pages.
+* Added better error messages for third-party plugins who use wp_die to display errors.
+
+= 2.1.0 =
+* Released 2023-10-25
+* New tabs: Added Integrations tab to showcase compatible plugins and a Lazy Load tab to control the lazy load options.
+* Lazy loading: Lazy Loading is now more clearly enabled or disabled via admin options.
+* Lazy Loading: Added External, Comments Scrolled Into Viewport, Dom Element Reached, and Page Scroll Length as triggers.
+* Lazy Loading: Deprecated Viewport Trigger in favor of Dom Element and Comment sections reached.
+* Lazy Loading: Deprecated None option in favor of External trigger.
+* Lazy Loading: Added scroll offset for lazy loading when targeting sections or elements.
+* Details in the <a href="https://dlxplugins.com/announcements/ajaxify-comments-2-1-0-released-with-lazy-load-improvements/">Ajaxify Lazy Loading announcement post</a>.
+
+= 2.0.15 =
+* Released 2023-10-24
+* Fixing undefined callback error with OnAfterPostComment callback.
+
+= 2.0.14 =
+* Released 2023-10-20
+* Resolving Ajax compatibility issue with Ninja Forms.
+* Successfully tested with WP 6.4.
+
+= 2.0.11 =
+* Released 2023-10-06
+* Added WPML support to the plugin (<a href="https://docs.dlxplugins.com/v/ajaxify-comments/advanced-topics/wpml-and-translations">docs on how to set this up</a>).
+* Added duplicate comment label setting.
+* Added support for the Ollie theme.
+* Updated Menu Helper to better support block-enabled themes.
+
+= 2.0.9 =
+* Released 2023-10-03
+* Added CSS class to overlay for easier styling.
+* Added WPML config for translatable string options.
+
+= 2.0.7 =
+* Released 2023-09-30
+* Placed `gettext` call only on comment posting, improving performance.
+* Resolved improper `functions.php` inclusion.
+* New filter for changing options before they are output as JSON.
+
+= 2.0.5 =
+* Released 2023-09-28
+* Refactoring lazy loading. It should be much more reliable now. It has been tested with Astra, Twenty Twenty-Three, and Genesis themes.
+* Updating Menu Helper to simulate lazy loading on or off.
+
+= 2.0.1 =
+* Released 2023-09-27
+* Lazy loading was referencing the wrong variable. This has been fixed.
+
+= 2.0.0 =
+* Released 2023-09-24
+* Renamed WP Ajaxify Comments to Ajaxify Comments in the admin. Updated branding.
+* Completely refreshed admin interface. The admin is now organized into tabs with quick saving and reset options.
+* Appearance tab allows for a real-time preview of the plugin's appearance.
+* Appearance tab is a lot more user friendly, allowing for easy customization of the plugin's appearance.
+* Added Support tab with helpful links to documentation and support.
+* Removed admin notice on plugins screen.
+* Replaced admin notice with contextual plugin row notice. This will display whenever debug mode is on, or if the plugin is disabled.
+* Added first-time-installation notice for new users who are new to setting up the plugin.
+* Added synthetic callback events for the available callbacks. This allows developers to hook into the plugin's events without having to modify the plugin's code.
+* Callbacks have a slightly more secure implementation and execution.
+* Added a tool called Selector Helper, which will help users find the right selectors for their theme.
+* Please <a href="https://dlxplugins.com/announcements/ajaxify-comments-2-0-is-released/">read the announcement post</a> for more information.
+
+= 1.7.5 =
+* Released 2023-08-30
+* Ensuring compatibility with WordPress 6.3.
 
 == Upgrade Notice ==
 
-= 1.6.1 =
-* Optimized JavaScript injection
-
-= 1.6.0 =
-* Removed dependency to PHP session
-
-= 1.5.1 =
-* "Undefined variable: wpac_options"
-
-= 1.5.0 =
-* Added JavaScript callback "OnAfterPostComment"
-
-= 1.4.1 =
-* Prevent the comment form from being submitted multiple times in parallel, fixed PHP notice "Undefined index: pagenow"
-
-= 1.4.0 =
-* Added (expert) option "Enable by query"
-
-= 1.3.0 =
-* Added request parameters "WPACAll", "WPACSkip" and "WPACTake"
-
-= 1.2.0 =
-* Added (expert) option "Disable cache", use GET request when updating comments
-
-= 1.1.1 =
-* Fixed link to settings page in admin frontend
-
-= 1.1.0 =
-* Fixed compatibility to WordPress 4.1
-
-= 1.0.0 =
-* Added (expert) option "Base URL" to support reverse proxy configuration, fixed page title update for titles containing UTF-8 characters, typo fix
-
-= 0.25.0 =
-* Loading comments now updates page title, OnBeforeSubmitComment callback is now called before submitUrl is extracted
-
-= 0.24.1 =
-* Updated localization for zh-CN
-
-= 0.24.0 =
-* Added parameter commentUrl to callbacks OnBeforeUpdateComments and OnAfterUpdateComments
-
-= 0.23.1 =
-* Changed order of links in plugin overview, Make sure WPAC._Options is always initialized, Bugfix for comment paging links
-
-= 0.23.0 =
-* Added (expert) option "Place scripts in footer", Bugfix for "Users must be registered and logged in to comment", Added option "Comment links selector", Fixed PHP Notice for PHP < 5.4.0
-
-= 0.22.0 =
-* Minor optimizations, Added (expert) option "Optimize AJAX response", Bugfix for HTTPS
-
-= 0.21.0 =
-* Added option "Disable scroll to anchor", Bugfixes for pages where comments are closed and/or async comment loading is enabled, Fixed compressed JavaScript file
-
-= 0.20.0 =
-* Added support for multiple comment forms per page and support for none default WordPress comment pages
-
-= 0.19.0 =
-* Added parameter newDom to callbacks OnBeforeUpdateComments and OnAfterUpdateComments, Fixed JavaScript errors
-
-= 0.18.1 =
-* Fixed double slashes in JavaScript include
-
-= 0.18.0 =
-* Optimized JavaScript includes, Added option to customize trigger for asynchronous comment loading
-
-= 0.17.3 =
-* Fixed "Undefined index" PHP notice
-
-= 0.17.2 =
-* Fixed compatibility to wpMandrill
-
-= 0.17.1 =
-"OnAfterUpdateComments" callback is now called after form data has been reset
-
-= 0.17.0 =
-Options to customize (default) WordPress messages, Disabled (auto) scrolling when comments are updated by "Auto update idle time", Fixed compatibility to jQuery "no conflict mode"
-
-= 0.16.1 =
-Bugfix for cross-domain scripting detection
-
-= 0.16.0 =
-Added option to automatically update comments if user is "idle", Updated jQuery blockUI to 2.64
-
-= 0.15.0 =
-Added option to disable URL updating
-
-= 0.14.3 =
-Fixed some PHP strict warnings
-
-= 0.14.2 =
-Fixed compatibility to PHP < 5.4.0
-
-= 0.14.1 =
-Fixed compatibility to jQuery "no conflict mode"
-
-= 0.14.0 =
-Added options to customize texts, Updated jQuery blockUI to 2.61, Improved client-side API, Added jsuri 1.1.1 to optimize query string sin fallback URLs
-
-= 0.13.1 =
-Bug-fixes, improved URL updating, added localization for da-DK
-
-= 0.13.0 =
-Ajaxified comment paging, added localization for da-DK
-
-= 0.12.1 =
-Hotfix for environments where PHP is not installed as an Apache module
-
-= 0.12.0 =
-Bug-fixes, refactored and extended client-side JavaScript API
-
-= 0.11.0 =
-Added localization for hu-HU, added more options to customize the overlays
-
-= 0.10.0 =
-Added localization for he-LI, added JavaScript callback ("Before submit comment"), updated jQuery blockUI to 2.57
-
-= 0.9.0 =
-Added JavaScript method wpac_init(), optimzed SQL queries, fixed debug alert in IE 9, added localization for sk-SK
-
-= 0.8.0 =
-Added option to customize the font size, i18n support for admin frontend
-
-= 0.7.0 =
-Added JavaScript callback ("Before select elements")
-
-= 0.6.3 =
-Added localization for ar
-
-= 0.6.2 =
-Some bug-fixes
-
-= 0.6.1 =
-Added localization for ru-RU and uk
-
-= 0.6.0 =
-Added JavaScript callbacks
-
-= 0.5.4 =
-jQuery 1.7+ compatibility
-
-= 0.5.3 =
-Added localization for tr-TR and pt-BR
-
-= 0.5.2 =
-Added localization for fa-IR
-
-= 0.5.1 =
-Updated localization for zh-CN, Updated jQuery blockUI to 2.42
-
-= 0.5.0 =
-Bug-fix, support for comments that are awaiting moderation, more detailed debug messages & debug support for IE 9, added localization for ca
-
-= 0.4.1 =
-Added localization for nl-NL
-
-= 0.4.0 =
-Bug-fix, added options to customize the look and feel, added localizations (vi-VN and en-ES), updated localization for de-DE
-
-= 0.3.4 =
-Added localization for pl-PL
-
-= 0.3.3 =
-Bug-fix
-
-= 0.3.2 =
-Added localization for fr-FR
-
-= 0.3.1 =
-Added localization for zh-CN
-
-= 0.3.0 =
-Added i18n support
-
-= 0.2.1 =
-Bug-fix & minor improvements
-
-= 0.2.0 =
-Added compatibility with comment spam protection plugins
-
-= 0.1.2 =
-Bug-fix
-
-= 0.1.1 =
-Bug-fix
-
-= 0.1.0 =
-Better theme support (for threaded comments) and new features
-
-= 0.0.2 =
-Bug-fix
+= 2.1.1 =
+Performance improvement to prevent Ajaxify from loading on all pages. Added better error messages for third-party plugins who use wp_die to display errors.

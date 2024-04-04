@@ -408,12 +408,18 @@
 	background-color: #45668e;
 }
 
-/*--------------------------------------------------
-				    AFC PRO FIX
----------------------------------------------------*/
+/* Plugin conflicts */
+
 .ui-dialog {
 	z-index: 100101 !important;
 }
 .ui-widget-overlay {
 	z-index: 100100 !important;
+}
+.settings_page_updraftplus div.ui-dialog.ui-widget.ui-widget-content {
+    z-index: 100101 !important;
+}
+
+.updraft-container{
+	z-index: 100102 !important;
 }

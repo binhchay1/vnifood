@@ -1,9 +1,10 @@
 <?php
+
 /**
  * Plugin Name:       Easy Custom Js And Css
  * Plugin URI:        http://avirtum.com
  * Description:       Add your own custom css styles and javascript code with a powerful editor and take more control over themes and plugins appearance, apply styles and code based on site-specific parameters and settings like url, date, users, roles and etc.
- * Version:           1.1.1
+ * Version:           1.1.2
  * Author:            Avirtum
  * Author URI:        http://avirtum.com/
  * License:           GPLv3
@@ -11,10 +12,9 @@
  * Domain Path:       /languages
  */
 
-
 // If this file is called directly, abort.
-if(!defined('WPINC')) {
-	die;
+if(!defined('ABSPATH')) {
+	exit;
 }
 
 /**
@@ -23,15 +23,15 @@ if(!defined('WPINC')) {
  * Rename this for your plugin and update it as you release new versions.
  */
 define('EASYJC_PLUGIN_NAME', 'easy_custom_js_and_css');
-define('EASYJC_PLUGIN_VERSION', '1.1.1');
-define('EASYJC_DB_VERSION', '1.0.0');
+define('EASYJC_PLUGIN_VERSION', '1.1.2');
+define('EASYJC_DB_VERSION', '1.0.1');
+
 
 /**
  * The code that runs during plugin activation
  */
 function easy_custom_js_and_css_activate() {
 	require_once( plugin_dir_path( __FILE__ ) . 'includes/activator.php' );
-	
 	$activator = new EasyCustomJsAndCss_Activator();
 	$activator->activate();
 }
@@ -42,7 +42,6 @@ register_activation_hook( __FILE__, 'easy_custom_js_and_css_activate' );
  */
 function easy_custom_js_and_css_deactivate() {
 	require_once( plugin_dir_path( __FILE__ ) . 'includes/deactivator.php' );
-	
 	$deactivator = new EasyCustomJsAndCss_Deactivator();
 	$deactivator->deactivate();
 }

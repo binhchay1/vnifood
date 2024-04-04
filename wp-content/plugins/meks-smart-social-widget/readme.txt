@@ -3,8 +3,8 @@ Contributors: mekshq
 Donate link: https://mekshq.com/
 Tags: social, icons, widget, linkedin, reddit, vimeo, dribble, instagram, pinterest
 Requires at least: 3.0
-Tested up to: 5.2
-Stable tag: 1.4
+Tested up to: 6.4
+Stable tag: 1.6.4
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl.html
 
@@ -46,6 +46,29 @@ For any questions, error reports and suggestions please visit https://mekshq.com
 4. Widget in action - example 3
 
 == Changelog ==
+
+= 1.6.4 =
+* WP 6.4 compatibility tested
+* Modified: Minor XSS vulnerability resolved
+
+= 1.6.3 =
+* Added: Twitter is now rebranded to X
+
+= 1.6.2 =
+* WP 6.3 compatibility tested
+* Added: TikTok icon
+
+= 1.6.1 =
+
+* Modified: Minor CSRF vulnerability resolved
+
+= 1.6 =
+
+* Modified: The plugin disables Widgets Block Editor (introduced since WP 5.8), as it currently works properly with Classic Widgets Editor 
+
+= 1.5 =
+
+* Added: Notification for meks plugins
 
 = 1.4 =
 

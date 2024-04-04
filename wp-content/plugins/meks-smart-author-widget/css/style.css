@@ -10,3 +10,18 @@
 .mks-co-authors-wrapper:last-child {
 	margin-bottom: 0;
 }
+
+.wp-block-legacy-widget__edit-preview .mks_author_widget > * {
+	margin-top: 0 !important;
+	margin-bottom: 0 !important;
+}
+.howto {
+	font-size: 12px;
+}
+.widget-inside ul {
+	padding: 0 !important;
+	margin: 5px 0 !important;
+}
+.widget-inside ul li::marker {
+	content: none !important;
+}

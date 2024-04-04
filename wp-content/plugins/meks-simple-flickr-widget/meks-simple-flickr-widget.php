@@ -4,7 +4,7 @@ Plugin Name: Meks Simple Flickr Widget
 Plugin URI: https://mekshq.com
 Description: Quickly display your Flickr photos inside WordPress widget. No authorization required (only provide your user id).
 Author: Meks
-Version: 1.1.3
+Version: 1.3
 Author URI: https://mekshq.com
 Text Domain: meks-simple-flickr-widget
 Domain Path: /languages
@@ -30,7 +30,7 @@ Domain Path: /languages
 
 define( 'MKS_FLICKR_WIDGET_URL', trailingslashit( plugin_dir_url( __FILE__ ) ) );
 define( 'MKS_FLICKR_WIDGET_DIR', trailingslashit( plugin_dir_path( __FILE__ ) ) );
-define( 'MKS_FLICKR_WIDGET_VER', '1.1.3' );
+define( 'MKS_FLICKR_WIDGET_VER', '1.3' );
 
 /* Initialize Widget */
 if ( !function_exists( 'mks_flickr_widget_init' ) ):
@@ -48,5 +48,3 @@ function mks_load_flickr_widget_text_domain() {
 }
 
 add_action( 'plugins_loaded', 'mks_load_flickr_widget_text_domain' );
-
-?>

@@ -39,7 +39,7 @@
     
     /* Initialize tabs */
 
-    $(window).load(function(){
+    $(window).on('load', function(){
         $('.mks_tabs').each(function(){
             mks_init_tabs($(this));
         });

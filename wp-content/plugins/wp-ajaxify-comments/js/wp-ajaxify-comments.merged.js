@@ -1,480 +1,466 @@
 /*!
- * jsUri v1.1.1
+ * jsUri
  * https://github.com/derek-watson/jsUri
  *
- * Copyright 2011, Derek Watson
+ * Copyright 2013, Derek Watson
  * Released under the MIT license.
- * http://jquery.org/license
  *
  * Includes parseUri regular expressions
  * http://blog.stevenlevithan.com/archives/parseuri
  * Copyright 2007, Steven Levithan
  * Released under the MIT license.
- *
- * Date: Mon Nov 14 20:06:34 2011 -0800
  */
-    
 
-var Query = function (queryString) {
+ /*globals define, module */
 
-    // query string parsing, parameter manipulation and stringification
+ (function(global) {
 
-    'use strict';
-
-    var // parseQuery(q) parses the uri query string and returns a multi-dimensional array of the components
-        parseQuery = function (q) {
-            var arr = [], i, ps, p, keyval;
-
-            if (typeof (q) === 'undefined' || q === null || q === '') {
-                return arr;
-            }
-
-            if (q.indexOf('?') === 0) {
-                q = q.substring(1);
-            }
-
-            ps = q.toString().split(/[&;]/);
-
-            for (i = 0; i < ps.length; i++) {
-                p = ps[i];
-                keyval = p.split('=');
-                arr.push([keyval[0], keyval[1]]);
-            }
-
-            return arr;
-        },
-
-        params = parseQuery(queryString),
-
-        // toString() returns a string representation of the internal state of the object
-        toString = function () {
-            var s = '', i, param;
-            for (i = 0; i < params.length; i++) {
-                param = params[i];
-                if (s.length > 0) {
-                    s += '&';
-                }
-                s += param.join('=');
-            }
-            return s.length > 0 ? '?' + s : s;
-        },
-
-        decode = function (s) {
-            s = decodeURIComponent(s);
-            s = s.replace('+', ' ');
-            return s;
-        },
-
-        // getParamValues(key) returns the first query param value found for the key 'key'
-        getParamValue = function (key) {
-            var param, i;
-            for (i = 0; i < params.length; i++) {
-                param = params[i];
-                if (decode(key) === decode(param[0])) {
-                    return param[1];
-                }
-            }
-        },
-
-        // getParamValues(key) returns an array of query param values for the key 'key'
-        getParamValues = function (key) {
-            var arr = [], i, param;
-            for (i = 0; i < params.length; i++) {
-                param = params[i];
-                if (decode(key) === decode(param[0])) {
-                    arr.push(param[1]);
-                }
-            }
-            return arr;
-        },
-
-        // deleteParam(key) removes all instances of parameters named (key)
-        // deleteParam(key, val) removes all instances where the value matches (val)
-        deleteParam = function (key, val) {
-
-            var arr = [], i, param, keyMatchesFilter, valMatchesFilter;
-
-            for (i = 0; i < params.length; i++) {
-
-                param = params[i];
-                keyMatchesFilter = decode(param[0]) === decode(key);
-                valMatchesFilter = decode(param[1]) === decode(val);
-
-                if ((arguments.length === 1 && !keyMatchesFilter) || (arguments.length === 2 && !keyMatchesFilter && !valMatchesFilter)) {
-                    arr.push(param);
-                }
-            }
-
-            params = arr;
-
-            return this;
-        },
-
-        // addParam(key, val) Adds an element to the end of the list of query parameters
-        // addParam(key, val, index) adds the param at the specified position (index)
-        addParam = function (key, val, index) {
-
-            if (arguments.length === 3 && index !== -1) {
-                index = Math.min(index, params.length);
-                params.splice(index, 0, [key, val]);
-            } else if (arguments.length > 0) {
-                params.push([key, val]);
-            }
-            return this;
-        },
-
-        // replaceParam(key, newVal) deletes all instances of params named (key) and replaces them with the new single value
-        // replaceParam(key, newVal, oldVal) deletes only instances of params named (key) with the value (val) and replaces them with the new single value
-        // this function attempts to preserve query param ordering
-        replaceParam = function (key, newVal, oldVal) {
-
-            var index = -1, i, param;
-
-            if (arguments.length === 3) {
-                for (i = 0; i < params.length; i++) {
-                    param = params[i];
-                    if (decode(param[0]) === decode(key) && decodeURIComponent(param[1]) === decode(oldVal)) {
-                        index = i;
-                        break;
-                    }
-                }
-                deleteParam(key, oldVal).addParam(key, newVal, index);
-            } else {
-                for (i = 0; i < params.length; i++) {
-                    param = params[i];
-                    if (decode(param[0]) === decode(key)) {
-                        index = i;
-                        break;
-                    }
-                }
-                deleteParam(key);
-                addParam(key, newVal, index);
-            }
-            return this;
-        };
-
-    // public api
-    return {
-        getParamValue: getParamValue,
-        getParamValues: getParamValues,
-        deleteParam: deleteParam,
-        addParam: addParam,
-        replaceParam: replaceParam,
-        
-        toString: toString
+    var re = {
+      starts_with_slashes: /^\/+/,
+      ends_with_slashes: /\/+$/,
+      pluses: /\+/g,
+      query_separator: /[&;]/,
+      uri_parser: /^(?:(?![^:@]+:[^:@\/]*@)([^:\/?#.]+):)?(?:\/\/)?((?:(([^:@\/]*)(?::([^:@]*))?)?@)?(\[[0-9a-fA-F:.]+\]|[^:\/?#]*)(?::(\d+|(?=:)))?(:)?)((((?:[^?#](?![^?#\/]*\.[^?#\/.]+(?:[?#]|$)))*\/?)?([^?#\/]*))(?:\?([^#]*))?(?:#(.*))?)/
     };
-};
-
-var Uri = function (uriString) {
-
-    // uri string parsing, attribute manipulation and stringification
-
-    'use strict';
-
-    /*global Query: true */
-    /*jslint regexp: false, plusplus: false */
-
-    var strictMode = false,
-
-        // parseUri(str) parses the supplied uri and returns an object containing its components
-        parseUri = function (str) {
-
-            /*jslint unparam: true */
-            var parsers = {
-                    strict: /^(?:([^:\/?#]+):)?(?:\/\/((?:(([^:@]*)(?::([^:@]*))?)?@)?([^:\/?#]*)(?::(\d*))?))?((((?:[^?#\/]*\/)*)([^?#]*))(?:\?([^#]*))?(?:#(.*))?)/,
-                    loose: /^(?:(?![^:@]+:[^:@\/]*@)([^:\/?#.]+):)?(?:\/\/)?((?:(([^:@]*)(?::([^:@]*))?)?@)?([^:\/?#]*)(?::(\d*))?)(((\/(?:[^?#](?![^?#\/]*\.[^?#\/.]+(?:[?#]|$)))*\/?)?([^?#\/]*))(?:\?([^#]*))?(?:#(.*))?)/
-                },
-                keys = ["source", "protocol", "authority", "userInfo", "user", "password", "host", "port", "relative", "path", "directory", "file", "query", "anchor"],
-                q = {
-                    name: "queryKey",
-                    parser: /(?:^|&)([^&=]*)=?([^&]*)/g
-                },
-                m = parsers[strictMode ? "strict" : "loose"].exec(str),
-                uri = {},
-                i = 14;
-
-            while (i--) {
-                uri[keys[i]] = m[i] || "";
-            }
-
-            uri[q.name] = {};
-            uri[keys[12]].replace(q.parser, function ($0, $1, $2) {
-                if ($1) {
-                    uri[q.name][$1] = $2;
-                }
-            });
-
-            return uri;
-        },
-
-        uriParts = parseUri(uriString || ''),
-
-        queryObj = new Query(uriParts.query),
-
-
-        /*
-            Basic get/set functions for all properties
-        */
-
-        protocol = function (val) {
-            if (typeof val !== 'undefined') {
-                uriParts.protocol = val;
-            }
-            return uriParts.protocol;
-        },
-
-        hasAuthorityPrefixUserPref = null,
-
-        // hasAuthorityPrefix: if there is no protocol, the leading // can be enabled or disabled
-        hasAuthorityPrefix = function (val) {
-
-            if (typeof val !== 'undefined') {
-                hasAuthorityPrefixUserPref = val;
-            }
-
-            if (hasAuthorityPrefixUserPref === null) {
-                return (uriParts.source.indexOf('//') !== -1);
-            } else {
-                return hasAuthorityPrefixUserPref;
-            }
-        },
-
-        userInfo = function (val) {
-            if (typeof val !== 'undefined') {
-                uriParts.userInfo = val;
-            }
-            return uriParts.userInfo;
-        },
-
-        host = function (val) {
-            if (typeof val !== 'undefined') {
-                uriParts.host = val;
-            }
-            return uriParts.host;
-        },
-
-        port = function (val) {
-            if (typeof val !== 'undefined') {
-                uriParts.port = val;
-            }
-            return uriParts.port;
-        },
-
-        path = function (val) {
-            if (typeof val !== 'undefined') {
-                uriParts.path = val;
-            }
-            return uriParts.path;
-        },
-
-        query = function (val) {
-            if (typeof val !== 'undefined') {
-                queryObj = new Query(val);
-            }
-            return queryObj;
-        },
-
-        anchor = function (val) {
-            if (typeof val !== 'undefined') {
-                uriParts.anchor = val;
-            }
-            return uriParts.anchor;
-        },
-
-
-        /*
-            Fluent setters for Uri uri properties
-        */
-
-        setProtocol = function (val) {
-            protocol(val);
-            return this;
-        },
-
-        setHasAuthorityPrefix = function (val) {
-            hasAuthorityPrefix(val);
-            return this;
-        },
-
-        setUserInfo = function (val) {
-            userInfo(val);
-            return this;
-        },
-
-        setHost = function (val) {
-            host(val);
-            return this;
-        },
-
-        setPort = function (val) {
-            port(val);
-            return this;
-        },
-
-        setPath = function (val) {
-            path(val);
-            return this;
-        },
-
-        setQuery = function (val) {
-            query(val);
-            return this;
-        },
-
-        setAnchor = function (val) {
-            anchor(val);
-            return this;
-        },
-
-        /*
-            Query method wrappers
-        */
-        getQueryParamValue = function (key) {
-            return query().getParamValue(key);
-        },
-
-        getQueryParamValues = function (key) {
-            return query().getParamValues(key);
-        },
-
-        deleteQueryParam = function (key, val) {
-            if (arguments.length === 2) {
-                query().deleteParam(key, val);
-            } else {
-                query().deleteParam(key);
-            }
-
-            return this;
-        },
-
-        addQueryParam = function (key, val, index) {
-            if (arguments.length === 3) {
-                query().addParam(key, val, index);
-            } else {
-                query().addParam(key, val);
-            }
-            return this;
-        },
-
-        replaceQueryParam = function (key, newVal, oldVal) {
-            if (arguments.length === 3) {
-                query().replaceParam(key, newVal, oldVal);
-            } else {
-                query().replaceParam(key, newVal);
-            }
-
-            return this;
-        },
-
-        /*
-            Serialization
-        */
-
-        // toString() stringifies the current state of the uri
-        toString = function () {
-
-            var s = '',
-                is = function (s) {
-                    return (s !== null && s !== '');
-                };
-
-            if (is(protocol())) {
-                s += protocol();
-                if (protocol().indexOf(':') !== protocol().length - 1) {
-                    s += ':';
-                }
-                s += '//';
-            } else {
-                if (hasAuthorityPrefix() && is(host())) {
-                    s += '//';
-                }
-            }
-
-            if (is(userInfo()) && is(host())) {
-                s += userInfo();
-                if (userInfo().indexOf('@') !== userInfo().length - 1) {
-                    s += '@';
-                }
-            }
-
-            if (is(host())) {
-                s += host();
-                if (is(port())) {
-                    s += ':' + port();
-                }
-            }
-
-            if (is(path())) {
-                s += path();
-            } else {
-                if (is(host()) && (is(query().toString()) || is(anchor()))) {
-                    s += '/';
-                }
-            }
-            if (is(query().toString())) {
-                if (query().toString().indexOf('?') !== 0) {
-                    s += '?';
-                }
-                s += query().toString();
-            }
-
-            if (is(anchor())) {
-                if (anchor().indexOf('#') !== 0) {
-                    s += '#';
-                }
-                s += anchor();
-            }
-
-            return s;
-        },
-
-        /*
-            Cloning
-        */
-
-        // clone() returns a new, identical Uri instance
-        clone = function () {
-            return new Uri(toString());
-        };
-
-    // public api
-    return {
-
-        protocol: protocol,
-        hasAuthorityPrefix: hasAuthorityPrefix,
-        userInfo: userInfo,
-        host: host,
-        port: port,
-        path: path,
-        query: query,
-        anchor: anchor,
-        
-        setProtocol: setProtocol,
-        setHasAuthorityPrefix: setHasAuthorityPrefix,
-        setUserInfo: setUserInfo,
-        setHost: setHost,
-        setPort: setPort,
-        setPath: setPath,
-        setQuery: setQuery,
-        setAnchor: setAnchor,
-        
-        getQueryParamValue: getQueryParamValue,
-        getQueryParamValues: getQueryParamValues,
-        deleteQueryParam: deleteQueryParam,
-        addQueryParam: addQueryParam,
-        replaceQueryParam: replaceQueryParam,
-        
-        toString: toString,
-        clone: clone
+  
+    /**
+     * Define forEach for older js environments
+     * @see https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/Array/forEach#Compatibility
+     */
+    if (!Array.prototype.forEach) {
+      Array.prototype.forEach = function(callback, thisArg) {
+        var T, k;
+  
+        if (this == null) {
+          throw new TypeError(' this is null or not defined');
+        }
+  
+        var O = Object(this);
+        var len = O.length >>> 0;
+  
+        if (typeof callback !== "function") {
+          throw new TypeError(callback + ' is not a function');
+        }
+  
+        if (arguments.length > 1) {
+          T = thisArg;
+        }
+  
+        k = 0;
+  
+        while (k < len) {
+          var kValue;
+          if (k in O) {
+            kValue = O[k];
+            callback.call(T, kValue, k, O);
+          }
+          k++;
+        }
+      };
+    }
+  
+    /**
+     * unescape a query param value
+     * @param  {string} s encoded value
+     * @return {string}   decoded value
+     */
+    function decode(s) {
+      if (s) {
+          s = s.toString().replace(re.pluses, '%20');
+          s = decodeURIComponent(s);
+      }
+      return s;
+    }
+  
+    /**
+     * Breaks a uri string down into its individual parts
+     * @param  {string} str uri
+     * @return {object}     parts
+     */
+    function parseUri(str) {
+      var parser = re.uri_parser;
+      var parserKeys = ["source", "protocol", "authority", "userInfo", "user", "password", "host", "port", "isColonUri", "relative", "path", "directory", "file", "query", "anchor"];
+      var m = parser.exec(str || '');
+      var parts = {};
+  
+      parserKeys.forEach(function(key, i) {
+        parts[key] = m[i] || '';
+      });
+  
+      return parts;
+    }
+  
+    /**
+     * Breaks a query string down into an array of key/value pairs
+     * @param  {string} str query
+     * @return {array}      array of arrays (key/value pairs)
+     */
+    function parseQuery(str) {
+      var i, ps, p, n, k, v, l;
+      var pairs = [];
+  
+      if (typeof(str) === 'undefined' || str === null || str === '') {
+        return pairs;
+      }
+  
+      if (str.indexOf('?') === 0) {
+        str = str.substring(1);
+      }
+  
+      ps = str.toString().split(re.query_separator);
+  
+      for (i = 0, l = ps.length; i < l; i++) {
+        p = ps[i];
+        n = p.indexOf('=');
+  
+        if (n !== 0) {
+          k = decode(p.substring(0, n));
+          v = decode(p.substring(n + 1));
+          pairs.push(n === -1 ? [p, null] : [k, v]);
+        }
+  
+      }
+      return pairs;
+    }
+  
+    /**
+     * Creates a new Uri object
+     * @constructor
+     * @param {string} str
+     */
+    function Uri(str) {
+      this.uriParts = parseUri(str);
+      this.queryPairs = parseQuery(this.uriParts.query);
+      this.hasAuthorityPrefixUserPref = null;
+    }
+  
+    /**
+     * Define getter/setter methods
+     */
+    ['protocol', 'userInfo', 'host', 'port', 'path', 'anchor'].forEach(function(key) {
+      Uri.prototype[key] = function(val) {
+        if (typeof val !== 'undefined') {
+          this.uriParts[key] = val;
+        }
+        return this.uriParts[key];
+      };
+    });
+  
+    /**
+     * if there is no protocol, the leading // can be enabled or disabled
+     * @param  {Boolean}  val
+     * @return {Boolean}
+     */
+    Uri.prototype.hasAuthorityPrefix = function(val) {
+      if (typeof val !== 'undefined') {
+        this.hasAuthorityPrefixUserPref = val;
+      }
+  
+      if (this.hasAuthorityPrefixUserPref === null) {
+        return (this.uriParts.source.indexOf('//') !== -1);
+      } else {
+        return this.hasAuthorityPrefixUserPref;
+      }
     };
-};
-
-/* add compatibility for users of jsUri <= 1.1.1 */
-var jsUri = Uri;
+  
+    Uri.prototype.isColonUri = function (val) {
+      if (typeof val !== 'undefined') {
+        this.uriParts.isColonUri = !!val;
+      } else {
+        return !!this.uriParts.isColonUri;
+      }
+    };
+  
+    /**
+     * Serializes the internal state of the query pairs
+     * @param  {string} [val]   set a new query string
+     * @return {string}         query string
+     */
+    Uri.prototype.query = function(val) {
+      var s = '', i, param, l;
+  
+      if (typeof val !== 'undefined') {
+        this.queryPairs = parseQuery(val);
+      }
+  
+      for (i = 0, l = this.queryPairs.length; i < l; i++) {
+        param = this.queryPairs[i];
+        if (s.length > 0) {
+          s += '&';
+        }
+        if (param[1] === null) {
+          s += param[0];
+        } else {
+          s += param[0];
+          s += '=';
+          if (typeof param[1] !== 'undefined') {
+            s += encodeURIComponent(param[1]);
+          }
+        }
+      }
+      return s.length > 0 ? '?' + s : s;
+    };
+  
+    /**
+     * returns the first query param value found for the key
+     * @param  {string} key query key
+     * @return {string}     first value found for key
+     */
+    Uri.prototype.getQueryParamValue = function (key) {
+      var param, i, l;
+      for (i = 0, l = this.queryPairs.length; i < l; i++) {
+        param = this.queryPairs[i];
+        if (key === param[0]) {
+          return param[1];
+        }
+      }
+    };
+  
+    /**
+     * returns an array of query param values for the key
+     * @param  {string} key query key
+     * @return {array}      array of values
+     */
+    Uri.prototype.getQueryParamValues = function (key) {
+      var arr = [], i, param, l;
+      for (i = 0, l = this.queryPairs.length; i < l; i++) {
+        param = this.queryPairs[i];
+        if (key === param[0]) {
+          arr.push(param[1]);
+        }
+      }
+      return arr;
+    };
+  
+    /**
+     * removes query parameters
+     * @param  {string} key     remove values for key
+     * @param  {val}    [val]   remove a specific value, otherwise removes all
+     * @return {Uri}            returns self for fluent chaining
+     */
+    Uri.prototype.deleteQueryParam = function (key, val) {
+      var arr = [], i, param, keyMatchesFilter, valMatchesFilter, l;
+  
+      for (i = 0, l = this.queryPairs.length; i < l; i++) {
+  
+        param = this.queryPairs[i];
+        keyMatchesFilter = decode(param[0]) === decode(key);
+        valMatchesFilter = param[1] === val;
+  
+        if ((arguments.length === 1 && !keyMatchesFilter) || (arguments.length === 2 && (!keyMatchesFilter || !valMatchesFilter))) {
+          arr.push(param);
+        }
+      }
+  
+      this.queryPairs = arr;
+  
+      return this;
+    };
+  
+    /**
+     * adds a query parameter
+     * @param  {string}  key        add values for key
+     * @param  {string}  val        value to add
+     * @param  {integer} [index]    specific index to add the value at
+     * @return {Uri}                returns self for fluent chaining
+     */
+    Uri.prototype.addQueryParam = function (key, val, index) {
+      if (arguments.length === 3 && index !== -1) {
+        index = Math.min(index, this.queryPairs.length);
+        this.queryPairs.splice(index, 0, [key, val]);
+      } else if (arguments.length > 0) {
+        this.queryPairs.push([key, val]);
+      }
+      return this;
+    };
+  
+    /**
+     * test for the existence of a query parameter
+     * @param  {string}  key        check values for key
+     * @return {Boolean}            true if key exists, otherwise false
+     */
+    Uri.prototype.hasQueryParam = function (key) {
+      var i, len = this.queryPairs.length;
+      for (i = 0; i < len; i++) {
+        if (this.queryPairs[i][0] == key)
+          return true;
+      }
+      return false;
+    };
+  
+    /**
+     * replaces query param values
+     * @param  {string} key         key to replace value for
+     * @param  {string} newVal      new value
+     * @param  {string} [oldVal]    replace only one specific value (otherwise replaces all)
+     * @return {Uri}                returns self for fluent chaining
+     */
+    Uri.prototype.replaceQueryParam = function (key, newVal, oldVal) {
+      var index = -1, len = this.queryPairs.length, i, param;
+  
+      if (arguments.length === 3) {
+        for (i = 0; i < len; i++) {
+          param = this.queryPairs[i];
+          if (decode(param[0]) === decode(key) && decodeURIComponent(param[1]) === decode(oldVal)) {
+            index = i;
+            break;
+          }
+        }
+        if (index >= 0) {
+          this.deleteQueryParam(key, decode(oldVal)).addQueryParam(key, newVal, index);
+        }
+      } else {
+        for (i = 0; i < len; i++) {
+          param = this.queryPairs[i];
+          if (decode(param[0]) === decode(key)) {
+            index = i;
+            break;
+          }
+        }
+        this.deleteQueryParam(key);
+        this.addQueryParam(key, newVal, index);
+      }
+      return this;
+    };
+  
+    /**
+     * Define fluent setter methods (setProtocol, setHasAuthorityPrefix, etc)
+     */
+    ['protocol', 'hasAuthorityPrefix', 'isColonUri', 'userInfo', 'host', 'port', 'path', 'query', 'anchor'].forEach(function(key) {
+      var method = 'set' + key.charAt(0).toUpperCase() + key.slice(1);
+      Uri.prototype[method] = function(val) {
+        this[key](val);
+        return this;
+      };
+    });
+  
+    /**
+     * Scheme name, colon and doubleslash, as required
+     * @return {string} http:// or possibly just //
+     */
+    Uri.prototype.scheme = function() {
+      var s = '';
+  
+      if (this.protocol()) {
+        s += this.protocol();
+        if (this.protocol().indexOf(':') !== this.protocol().length - 1) {
+          s += ':';
+        }
+        s += '//';
+      } else {
+        if (this.hasAuthorityPrefix() && this.host()) {
+          s += '//';
+        }
+      }
+  
+      return s;
+    };
+  
+    /**
+     * Same as Mozilla nsIURI.prePath
+     * @return {string} scheme://user:password@host:port
+     * @see  https://developer.mozilla.org/en/nsIURI
+     */
+    Uri.prototype.origin = function() {
+      var s = this.scheme();
+  
+      if (this.userInfo() && this.host()) {
+        s += this.userInfo();
+        if (this.userInfo().indexOf('@') !== this.userInfo().length - 1) {
+          s += '@';
+        }
+      }
+  
+      if (this.host()) {
+        s += this.host();
+        if (this.port() || (this.path() && this.path().substr(0, 1).match(/[0-9]/))) {
+          s += ':' + this.port();
+        }
+      }
+  
+      return s;
+    };
+  
+    /**
+     * Adds a trailing slash to the path
+     */
+    Uri.prototype.addTrailingSlash = function() {
+      var path = this.path() || '';
+  
+      if (path.substr(-1) !== '/') {
+        this.path(path + '/');
+      }
+  
+      return this;
+    };
+  
+    /**
+     * Serializes the internal state of the Uri object
+     * @return {string}
+     */
+    Uri.prototype.toString = function() {
+      var path, s = this.origin();
+  
+      if (this.isColonUri()) {
+        if (this.path()) {
+          s += ':'+this.path();
+        }
+      } else if (this.path()) {
+        path = this.path();
+        if (!(re.ends_with_slashes.test(s) || re.starts_with_slashes.test(path))) {
+          s += '/';
+        } else {
+          if (s) {
+            s.replace(re.ends_with_slashes, '/');
+          }
+          path = path.replace(re.starts_with_slashes, '/');
+        }
+        s += path;
+      } else {
+        if (this.host() && (this.query().toString() || this.anchor())) {
+          s += '/';
+        }
+      }
+      if (this.query().toString()) {
+        s += this.query().toString();
+      }
+  
+      if (this.anchor()) {
+        if (this.anchor().indexOf('#') !== 0) {
+          s += '#';
+        }
+        s += this.anchor();
+      }
+  
+      return s;
+    };
+  
+    /**
+     * Clone a Uri object
+     * @return {Uri} duplicate copy of the Uri
+     */
+    Uri.prototype.clone = function() {
+      return new Uri(this.toString());
+    };
+  
+    /**
+     * export via AMD or CommonJS, otherwise leak a global
+     */
+    if (typeof define === 'function' && define.amd) {
+      define(function() {
+        return Uri;
+      });
+    } else if (typeof module !== 'undefined' && typeof module.exports !== 'undefined') {
+      module.exports = Uri;
+    } else {
+      global.Uri = Uri;
+    }
+  }(this));
+  
 /*!
  * jQuery blockUI plugin
- * Version 2.64.0-2013.07.18
- * @requires jQuery v1.7 or later
+ * Version 2.70.0-2014.11.23
+ * Requires jQuery v1.7 or later
  *
  * Examples at: http://malsup.com/jquery/block/
  * Copyright (c) 2007-2013 M. Alsup
@@ -486,1293 +472,1604 @@ var jsUri = Uri;
  */
 
 ;(function() {
-/*jshint eqeqeq:false curly:false latedef:false */
-"use strict";
-
-	function setup($) {
-		$.fn._fadeIn = $.fn.fadeIn;
-
-		var noOp = $.noop || function() {};
-
-		// this bit is to ensure we don't call setExpression when we shouldn't (with extra muscle to handle
-		// confusing userAgent strings on Vista)
-		var msie = /MSIE/.test(navigator.userAgent);
-		var ie6  = /MSIE 6.0/.test(navigator.userAgent) && ! /MSIE 8.0/.test(navigator.userAgent);
-		var mode = document.documentMode || 0;
-		var setExpr = $.isFunction( document.createElement('div').style.setExpression );
-
-		// global $ methods for blocking/unblocking the entire page
-		$.blockUI   = function(opts) { install(window, opts); };
-		$.unblockUI = function(opts) { remove(window, opts); };
-
-		// convenience method for quick growl-like notifications  (http://www.google.com/search?q=growl)
-		$.growlUI = function(title, message, timeout, onClose) {
-			var $m = $('<div class="growlUI"></div>');
-			if (title) $m.append('<h1>'+title+'</h1>');
-			if (message) $m.append('<h2>'+message+'</h2>');
-			if (timeout === undefined) timeout = 3000;
-
-			// Added by konapun: Set timeout to 30 seconds if this growl is moused over, like normal toast notifications
-			var callBlock = function(opts) {
-				opts = opts || {};
-
-				$.blockUI({
-					message: $m,
-					fadeIn : typeof opts.fadeIn  !== 'undefined' ? opts.fadeIn  : 700,
-					fadeOut: typeof opts.fadeOut !== 'undefined' ? opts.fadeOut : 1000,
-					timeout: typeof opts.timeout !== 'undefined' ? opts.timeout : timeout,
-					centerY: false,
-					showOverlay: false,
-					onUnblock: onClose,
-					css: $.blockUI.defaults.growlCSS
+	/*jshint eqeqeq:false curly:false latedef:false */
+	"use strict";
+	
+		function setup($) {
+			$.fn._fadeIn = $.fn.fadeIn;
+	
+			var noOp = $.noop || function() {};
+	
+			// this bit is to ensure we don't call setExpression when we shouldn't (with extra muscle to handle
+			// confusing userAgent strings on Vista)
+			var msie = /MSIE/.test(navigator.userAgent);
+			var ie6  = /MSIE 6.0/.test(navigator.userAgent) && ! /MSIE 8.0/.test(navigator.userAgent);
+			var mode = document.documentMode || 0;
+			var setExpr = $.isFunction( document.createElement('div').style.setExpression );
+	
+			// global $ methods for blocking/unblocking the entire page
+			$.blockUI   = function(opts) { install(window, opts); };
+			$.unblockUI = function(opts) { remove(window, opts); };
+	
+			// convenience method for quick growl-like notifications  (http://www.google.com/search?q=growl)
+			$.growlUI = function(title, message, timeout, onClose) {
+				var $m = $('<div class="growlUI"></div>');
+				if (title) $m.append('<h1>'+title+'</h1>');
+				if (message) $m.append('<h2>'+message+'</h2>');
+				if (timeout === undefined) timeout = 3000;
+	
+				// Added by konapun: Set timeout to 30 seconds if this growl is moused over, like normal toast notifications
+				var callBlock = function(opts) {
+					opts = opts || {};
+	
+					$.blockUI({
+						message: $m,
+						fadeIn : typeof opts.fadeIn  !== 'undefined' ? opts.fadeIn  : 700,
+						fadeOut: typeof opts.fadeOut !== 'undefined' ? opts.fadeOut : 1000,
+						timeout: typeof opts.timeout !== 'undefined' ? opts.timeout : timeout,
+						centerY: false,
+						showOverlay: false,
+						onUnblock: onClose,
+						css: $.blockUI.defaults.growlCSS
+					});
+				};
+	
+				callBlock();
+				var nonmousedOpacity = $m.css('opacity');
+				$m.mouseover(function() {
+					callBlock({
+						fadeIn: 0,
+						timeout: 30000
+					});
+	
+					var displayBlock = $('.blockMsg');
+					displayBlock.stop(); // cancel fadeout if it has started
+					displayBlock.fadeTo(300, 1); // make it easier to read the message by removing transparency
+				}).mouseout(function() {
+					$('.blockMsg').fadeOut(1000);
+				});
+				// End konapun additions
+			};
+	
+			// plugin method for blocking element content
+			$.fn.block = function(opts) {
+				if ( this[0] === window ) {
+					$.blockUI( opts );
+					return this;
+				}
+				var fullOpts = $.extend({}, $.blockUI.defaults, opts || {});
+				this.each(function() {
+					var $el = $(this);
+					if (fullOpts.ignoreIfBlocked && $el.data('blockUI.isBlocked'))
+						return;
+					$el.unblock({ fadeOut: 0 });
+				});
+	
+				return this.each(function() {
+					if ($.css(this,'position') == 'static') {
+						this.style.position = 'relative';
+						$(this).data('blockUI.static', true);
+					}
+					this.style.zoom = 1; // force 'hasLayout' in ie
+					install(this, opts);
 				});
 			};
-
-			callBlock();
-			var nonmousedOpacity = $m.css('opacity');
-			$m.mouseover(function() {
-				callBlock({
-					fadeIn: 0,
-					timeout: 30000
+	
+			// plugin method for unblocking element content
+			$.fn.unblock = function(opts) {
+				if ( this[0] === window ) {
+					$.unblockUI( opts );
+					return this;
+				}
+				return this.each(function() {
+					remove(this, opts);
 				});
-
-				var displayBlock = $('.blockMsg');
-				displayBlock.stop(); // cancel fadeout if it has started
-				displayBlock.fadeTo(300, 1); // make it easier to read the message by removing transparency
-			}).mouseout(function() {
-				$('.blockMsg').fadeOut(1000);
-			});
-			// End konapun additions
-		};
-
-		// plugin method for blocking element content
-		$.fn.block = function(opts) {
-			if ( this[0] === window ) {
-				$.blockUI( opts );
-				return this;
-			}
-			var fullOpts = $.extend({}, $.blockUI.defaults, opts || {});
-			this.each(function() {
-				var $el = $(this);
-				if (fullOpts.ignoreIfBlocked && $el.data('blockUI.isBlocked'))
+			};
+	
+			$.blockUI.version = 2.70; // 2nd generation blocking at no extra cost!
+	
+			// override these in your code to change the default behavior and style
+			$.blockUI.defaults = {
+				// message displayed when blocking (use null for no message)
+				message:  '<h1>Please wait...</h1>',
+	
+				title: null,		// title string; only used when theme == true
+				draggable: true,	// only used when theme == true (requires jquery-ui.js to be loaded)
+	
+				theme: false, // set to true to use with jQuery UI themes
+	
+				// styles for the message when blocking; if you wish to disable
+				// these and use an external stylesheet then do this in your code:
+				// $.blockUI.defaults.css = {};
+				css: {
+					padding:	0,
+					margin:		0,
+					width:		'30%',
+					top:		'40%',
+					left:		'35%',
+					textAlign:	'center',
+					color:		'#000',
+					border:		'3px solid #aaa',
+					backgroundColor:'#fff',
+					cursor:		'wait'
+				},
+	
+				// minimal style set used when themes are used
+				themedCSS: {
+					width:	'30%',
+					top:	'40%',
+					left:	'35%'
+				},
+	
+				// styles for the overlay
+				overlayCSS:  {
+					backgroundColor:	'#000',
+					opacity:			0.6,
+					cursor:				'wait'
+				},
+	
+				// style to replace wait cursor before unblocking to correct issue
+				// of lingering wait cursor
+				cursorReset: 'default',
+	
+				// styles applied when using $.growlUI
+				growlCSS: {
+					width:		'350px',
+					top:		'10px',
+					left:		'',
+					right:		'10px',
+					border:		'none',
+					padding:	'5px',
+					opacity:	0.6,
+					cursor:		'default',
+					color:		'#fff',
+					backgroundColor: '#000',
+					'-webkit-border-radius':'10px',
+					'-moz-border-radius':	'10px',
+					'border-radius':		'10px'
+				},
+	
+				// IE issues: 'about:blank' fails on HTTPS and javascript:false is s-l-o-w
+				// (hat tip to Jorge H. N. de Vasconcelos)
+				/*jshint scripturl:true */
+				iframeSrc: /^https/i.test(window.location.href || '') ? 'javascript:false' : 'about:blank',
+	
+				// force usage of iframe in non-IE browsers (handy for blocking applets)
+				forceIframe: false,
+	
+				// z-index for the blocking overlay
+				baseZ: 1000,
+	
+				// set these to true to have the message automatically centered
+				centerX: true, // <-- only effects element blocking (page block controlled via css above)
+				centerY: true,
+	
+				// allow body element to be stetched in ie6; this makes blocking look better
+				// on "short" pages.  disable if you wish to prevent changes to the body height
+				allowBodyStretch: true,
+	
+				// enable if you want key and mouse events to be disabled for content that is blocked
+				bindEvents: true,
+	
+				// be default blockUI will supress tab navigation from leaving blocking content
+				// (if bindEvents is true)
+				constrainTabKey: true,
+	
+				// fadeIn time in millis; set to 0 to disable fadeIn on block
+				fadeIn:  200,
+	
+				// fadeOut time in millis; set to 0 to disable fadeOut on unblock
+				fadeOut:  400,
+	
+				// time in millis to wait before auto-unblocking; set to 0 to disable auto-unblock
+				timeout: 0,
+	
+				// disable if you don't want to show the overlay
+				showOverlay: true,
+	
+				// if true, focus will be placed in the first available input field when
+				// page blocking
+				focusInput: true,
+	
+				// elements that can receive focus
+				focusableElements: ':input:enabled:visible',
+	
+				// suppresses the use of overlay styles on FF/Linux (due to performance issues with opacity)
+				// no longer needed in 2012
+				// applyPlatformOpacityRules: true,
+	
+				// callback method invoked when fadeIn has completed and blocking message is visible
+				onBlock: null,
+	
+				// callback method invoked when unblocking has completed; the callback is
+				// passed the element that has been unblocked (which is the window object for page
+				// blocks) and the options that were passed to the unblock call:
+				//	onUnblock(element, options)
+				onUnblock: null,
+	
+				// callback method invoked when the overlay area is clicked.
+				// setting this will turn the cursor to a pointer, otherwise cursor defined in overlayCss will be used.
+				onOverlayClick: null,
+	
+				// don't ask; if you really must know: http://groups.google.com/group/jquery-en/browse_thread/thread/36640a8730503595/2f6a79a77a78e493#2f6a79a77a78e493
+				quirksmodeOffsetHack: 4,
+	
+				// class name of the message block
+				blockMsgClass: 'blockMsg',
+	
+				// if it is already blocked, then ignore it (don't unblock and reblock)
+				ignoreIfBlocked: false
+			};
+	
+			// private data and functions follow...
+	
+			var pageBlock = null;
+			var pageBlockEls = [];
+	
+			function install(el, opts) {
+				var css, themedCSS;
+				var full = (el == window);
+				var msg = (opts && opts.message !== undefined ? opts.message : undefined);
+				opts = $.extend({}, $.blockUI.defaults, opts || {});
+	
+				if (opts.ignoreIfBlocked && $(el).data('blockUI.isBlocked'))
 					return;
-				$el.unblock({ fadeOut: 0 });
-			});
-
-			return this.each(function() {
-				if ($.css(this,'position') == 'static') {
-					this.style.position = 'relative';
-					$(this).data('blockUI.static', true);
+	
+				opts.overlayCSS = $.extend({}, $.blockUI.defaults.overlayCSS, opts.overlayCSS || {});
+				css = $.extend({}, $.blockUI.defaults.css, opts.css || {});
+				if (opts.onOverlayClick)
+					opts.overlayCSS.cursor = 'pointer';
+	
+				themedCSS = $.extend({}, $.blockUI.defaults.themedCSS, opts.themedCSS || {});
+				msg = msg === undefined ? opts.message : msg;
+	
+				// remove the current block (if there is one)
+				if (full && pageBlock)
+					remove(window, {fadeOut:0});
+	
+				// if an existing element is being used as the blocking content then we capture
+				// its current place in the DOM (and current display style) so we can restore
+				// it when we unblock
+				if (msg && typeof msg != 'string' && (msg.parentNode || msg.jquery)) {
+					var node = msg.jquery ? msg[0] : msg;
+					var data = {};
+					$(el).data('blockUI.history', data);
+					data.el = node;
+					data.parent = node.parentNode;
+					data.display = node.style.display;
+					data.position = node.style.position;
+					if (data.parent)
+						data.parent.removeChild(node);
 				}
-				this.style.zoom = 1; // force 'hasLayout' in ie
-				install(this, opts);
-			});
-		};
-
-		// plugin method for unblocking element content
-		$.fn.unblock = function(opts) {
-			if ( this[0] === window ) {
-				$.unblockUI( opts );
-				return this;
-			}
-			return this.each(function() {
-				remove(this, opts);
-			});
-		};
-
-		$.blockUI.version = 2.60; // 2nd generation blocking at no extra cost!
-
-		// override these in your code to change the default behavior and style
-		$.blockUI.defaults = {
-			// message displayed when blocking (use null for no message)
-			message:  '<h1>Please wait...</h1>',
-
-			title: null,		// title string; only used when theme == true
-			draggable: true,	// only used when theme == true (requires jquery-ui.js to be loaded)
-
-			theme: false, // set to true to use with jQuery UI themes
-
-			// styles for the message when blocking; if you wish to disable
-			// these and use an external stylesheet then do this in your code:
-			// $.blockUI.defaults.css = {};
-			css: {
-				padding:	0,
-				margin:		0,
-				width:		'30%',
-				top:		'40%',
-				left:		'35%',
-				textAlign:	'center',
-				color:		'#000',
-				border:		'3px solid #aaa',
-				backgroundColor:'#fff',
-				cursor:		'wait'
-			},
-
-			// minimal style set used when themes are used
-			themedCSS: {
-				width:	'30%',
-				top:	'40%',
-				left:	'35%'
-			},
-
-			// styles for the overlay
-			overlayCSS:  {
-				backgroundColor:	'#000',
-				opacity:			0.6,
-				cursor:				'wait'
-			},
-
-			// style to replace wait cursor before unblocking to correct issue
-			// of lingering wait cursor
-			cursorReset: 'default',
-
-			// styles applied when using $.growlUI
-			growlCSS: {
-				width:		'350px',
-				top:		'10px',
-				left:		'',
-				right:		'10px',
-				border:		'none',
-				padding:	'5px',
-				opacity:	0.6,
-				cursor:		'default',
-				color:		'#fff',
-				backgroundColor: '#000',
-				'-webkit-border-radius':'10px',
-				'-moz-border-radius':	'10px',
-				'border-radius':		'10px'
-			},
-
-			// IE issues: 'about:blank' fails on HTTPS and javascript:false is s-l-o-w
-			// (hat tip to Jorge H. N. de Vasconcelos)
-			/*jshint scripturl:true */
-			iframeSrc: /^https/i.test(window.location.href || '') ? 'javascript:false' : 'about:blank',
-
-			// force usage of iframe in non-IE browsers (handy for blocking applets)
-			forceIframe: false,
-
-			// z-index for the blocking overlay
-			baseZ: 1000,
-
-			// set these to true to have the message automatically centered
-			centerX: true, // <-- only effects element blocking (page block controlled via css above)
-			centerY: true,
-
-			// allow body element to be stetched in ie6; this makes blocking look better
-			// on "short" pages.  disable if you wish to prevent changes to the body height
-			allowBodyStretch: true,
-
-			// enable if you want key and mouse events to be disabled for content that is blocked
-			bindEvents: true,
-
-			// be default blockUI will supress tab navigation from leaving blocking content
-			// (if bindEvents is true)
-			constrainTabKey: true,
-
-			// fadeIn time in millis; set to 0 to disable fadeIn on block
-			fadeIn:  200,
-
-			// fadeOut time in millis; set to 0 to disable fadeOut on unblock
-			fadeOut:  400,
-
-			// time in millis to wait before auto-unblocking; set to 0 to disable auto-unblock
-			timeout: 0,
-
-			// disable if you don't want to show the overlay
-			showOverlay: true,
-
-			// if true, focus will be placed in the first available input field when
-			// page blocking
-			focusInput: true,
-
-            // elements that can receive focus
-            focusableElements: ':input:enabled:visible',
-
-			// suppresses the use of overlay styles on FF/Linux (due to performance issues with opacity)
-			// no longer needed in 2012
-			// applyPlatformOpacityRules: true,
-
-			// callback method invoked when fadeIn has completed and blocking message is visible
-			onBlock: null,
-
-			// callback method invoked when unblocking has completed; the callback is
-			// passed the element that has been unblocked (which is the window object for page
-			// blocks) and the options that were passed to the unblock call:
-			//	onUnblock(element, options)
-			onUnblock: null,
-
-			// callback method invoked when the overlay area is clicked.
-			// setting this will turn the cursor to a pointer, otherwise cursor defined in overlayCss will be used.
-			onOverlayClick: null,
-
-			// don't ask; if you really must know: http://groups.google.com/group/jquery-en/browse_thread/thread/36640a8730503595/2f6a79a77a78e493#2f6a79a77a78e493
-			quirksmodeOffsetHack: 4,
-
-			// class name of the message block
-			blockMsgClass: 'blockMsg',
-
-			// if it is already blocked, then ignore it (don't unblock and reblock)
-			ignoreIfBlocked: false
-		};
-
-		// private data and functions follow...
-
-		var pageBlock = null;
-		var pageBlockEls = [];
-
-		function install(el, opts) {
-			var css, themedCSS;
-			var full = (el == window);
-			var msg = (opts && opts.message !== undefined ? opts.message : undefined);
-			opts = $.extend({}, $.blockUI.defaults, opts || {});
-
-			if (opts.ignoreIfBlocked && $(el).data('blockUI.isBlocked'))
-				return;
-
-			opts.overlayCSS = $.extend({}, $.blockUI.defaults.overlayCSS, opts.overlayCSS || {});
-			css = $.extend({}, $.blockUI.defaults.css, opts.css || {});
-			if (opts.onOverlayClick)
-				opts.overlayCSS.cursor = 'pointer';
-
-			themedCSS = $.extend({}, $.blockUI.defaults.themedCSS, opts.themedCSS || {});
-			msg = msg === undefined ? opts.message : msg;
-
-			// remove the current block (if there is one)
-			if (full && pageBlock)
-				remove(window, {fadeOut:0});
-
-			// if an existing element is being used as the blocking content then we capture
-			// its current place in the DOM (and current display style) so we can restore
-			// it when we unblock
-			if (msg && typeof msg != 'string' && (msg.parentNode || msg.jquery)) {
-				var node = msg.jquery ? msg[0] : msg;
-				var data = {};
-				$(el).data('blockUI.history', data);
-				data.el = node;
-				data.parent = node.parentNode;
-				data.display = node.style.display;
-				data.position = node.style.position;
-				if (data.parent)
-					data.parent.removeChild(node);
-			}
-
-			$(el).data('blockUI.onUnblock', opts.onUnblock);
-			var z = opts.baseZ;
-
-			// blockUI uses 3 layers for blocking, for simplicity they are all used on every platform;
-			// layer1 is the iframe layer which is used to supress bleed through of underlying content
-			// layer2 is the overlay layer which has opacity and a wait cursor (by default)
-			// layer3 is the message content that is displayed while blocking
-			var lyr1, lyr2, lyr3, s;
-			if (msie || opts.forceIframe)
-				lyr1 = $('<iframe class="blockUI" style="z-index:'+ (z++) +';display:none;border:none;margin:0;padding:0;position:absolute;width:100%;height:100%;top:0;left:0" src="'+opts.iframeSrc+'"></iframe>');
-			else
-				lyr1 = $('<div class="blockUI" style="display:none"></div>');
-
-			if (opts.theme)
-				lyr2 = $('<div class="blockUI blockOverlay ui-widget-overlay" style="z-index:'+ (z++) +';display:none"></div>');
-			else
-				lyr2 = $('<div class="blockUI blockOverlay" style="z-index:'+ (z++) +';display:none;border:none;margin:0;padding:0;width:100%;height:100%;top:0;left:0"></div>');
-
-			if (opts.theme && full) {
-				s = '<div class="blockUI ' + opts.blockMsgClass + ' blockPage ui-dialog ui-widget ui-corner-all" style="z-index:'+(z+10)+';display:none;position:fixed">';
-				if ( opts.title ) {
-					s += '<div class="ui-widget-header ui-dialog-titlebar ui-corner-all blockTitle">'+(opts.title || '&nbsp;')+'</div>';
-				}
-				s += '<div class="ui-widget-content ui-dialog-content"></div>';
-				s += '</div>';
-			}
-			else if (opts.theme) {
-				s = '<div class="blockUI ' + opts.blockMsgClass + ' blockElement ui-dialog ui-widget ui-corner-all" style="z-index:'+(z+10)+';display:none;position:absolute">';
-				if ( opts.title ) {
-					s += '<div class="ui-widget-header ui-dialog-titlebar ui-corner-all blockTitle">'+(opts.title || '&nbsp;')+'</div>';
-				}
-				s += '<div class="ui-widget-content ui-dialog-content"></div>';
-				s += '</div>';
-			}
-			else if (full) {
-				s = '<div class="blockUI ' + opts.blockMsgClass + ' blockPage" style="z-index:'+(z+10)+';display:none;position:fixed"></div>';
-			}
-			else {
-				s = '<div class="blockUI ' + opts.blockMsgClass + ' blockElement" style="z-index:'+(z+10)+';display:none;position:absolute"></div>';
-			}
-			lyr3 = $(s);
-
-			// if we have a message, style it
-			if (msg) {
-				if (opts.theme) {
-					lyr3.css(themedCSS);
-					lyr3.addClass('ui-widget-content');
-				}
+	
+				$(el).data('blockUI.onUnblock', opts.onUnblock);
+				var z = opts.baseZ;
+	
+				// blockUI uses 3 layers for blocking, for simplicity they are all used on every platform;
+				// layer1 is the iframe layer which is used to supress bleed through of underlying content
+				// layer2 is the overlay layer which has opacity and a wait cursor (by default)
+				// layer3 is the message content that is displayed while blocking
+				var lyr1, lyr2, lyr3, s;
+				if (msie || opts.forceIframe)
+					lyr1 = $('<iframe class="blockUI" style="z-index:'+ (z++) +';display:none;border:none;margin:0;padding:0;position:absolute;width:100%;height:100%;top:0;left:0" src="'+opts.iframeSrc+'"></iframe>');
 				else
-					lyr3.css(css);
-			}
-
-			// style the overlay
-			if (!opts.theme /*&& (!opts.applyPlatformOpacityRules)*/)
-				lyr2.css(opts.overlayCSS);
-			lyr2.css('position', full ? 'fixed' : 'absolute');
-
-			// make iframe layer transparent in IE
-			if (msie || opts.forceIframe)
-				lyr1.css('opacity',0.0);
-
-			//$([lyr1[0],lyr2[0],lyr3[0]]).appendTo(full ? 'body' : el);
-			var layers = [lyr1,lyr2,lyr3], $par = full ? $('body') : $(el);
-			$.each(layers, function() {
-				this.appendTo($par);
-			});
-
-			if (opts.theme && opts.draggable && $.fn.draggable) {
-				lyr3.draggable({
-					handle: '.ui-dialog-titlebar',
-					cancel: 'li'
-				});
-			}
-
-			// ie7 must use absolute positioning in quirks mode and to account for activex issues (when scrolling)
-			var expr = setExpr && (!$.support.boxModel || $('object,embed', full ? null : el).length > 0);
-			if (ie6 || expr) {
-				// give body 100% height
-				if (full && opts.allowBodyStretch && $.support.boxModel)
-					$('html,body').css('height','100%');
-
-				// fix ie6 issue when blocked element has a border width
-				if ((ie6 || !$.support.boxModel) && !full) {
-					var t = sz(el,'borderTopWidth'), l = sz(el,'borderLeftWidth');
-					var fixT = t ? '(0 - '+t+')' : 0;
-					var fixL = l ? '(0 - '+l+')' : 0;
-				}
-
-				// simulate fixed position
-				$.each(layers, function(i,o) {
-					var s = o[0].style;
-					s.position = 'absolute';
-					if (i < 2) {
-						if (full)
-							s.setExpression('height','Math.max(document.body.scrollHeight, document.body.offsetHeight) - (jQuery.support.boxModel?0:'+opts.quirksmodeOffsetHack+') + "px"');
-						else
-							s.setExpression('height','this.parentNode.offsetHeight + "px"');
-						if (full)
-							s.setExpression('width','jQuery.support.boxModel && document.documentElement.clientWidth || document.body.clientWidth + "px"');
-						else
-							s.setExpression('width','this.parentNode.offsetWidth + "px"');
-						if (fixL) s.setExpression('left', fixL);
-						if (fixT) s.setExpression('top', fixT);
-					}
-					else if (opts.centerY) {
-						if (full) s.setExpression('top','(document.documentElement.clientHeight || document.body.clientHeight) / 2 - (this.offsetHeight / 2) + (blah = document.documentElement.scrollTop ? document.documentElement.scrollTop : document.body.scrollTop) + "px"');
-						s.marginTop = 0;
-					}
-					else if (!opts.centerY && full) {
-						var top = (opts.css && opts.css.top) ? parseInt(opts.css.top, 10) : 0;
-						var expression = '((document.documentElement.scrollTop ? document.documentElement.scrollTop : document.body.scrollTop) + '+top+') + "px"';
-						s.setExpression('top',expression);
-					}
-				});
-			}
-
-			// show the message
-			if (msg) {
+					lyr1 = $('<div class="blockUI" style="display:none"></div>');
+	
 				if (opts.theme)
-					lyr3.find('.ui-widget-content').append(msg);
+					lyr2 = $('<div class="blockUI blockOverlay ui-widget-overlay" style="z-index:'+ (z++) +';display:none"></div>');
 				else
-					lyr3.append(msg);
-				if (msg.jquery || msg.nodeType)
-					$(msg).show();
-			}
-
-			if ((msie || opts.forceIframe) && opts.showOverlay)
-				lyr1.show(); // opacity is zero
-			if (opts.fadeIn) {
-				var cb = opts.onBlock ? opts.onBlock : noOp;
-				var cb1 = (opts.showOverlay && !msg) ? cb : noOp;
-				var cb2 = msg ? cb : noOp;
-				if (opts.showOverlay)
-					lyr2._fadeIn(opts.fadeIn, cb1);
-				if (msg)
-					lyr3._fadeIn(opts.fadeIn, cb2);
-			}
-			else {
-				if (opts.showOverlay)
-					lyr2.show();
-				if (msg)
-					lyr3.show();
-				if (opts.onBlock)
-					opts.onBlock();
-			}
-
-			// bind key and mouse events
-			bind(1, el, opts);
-
-			if (full) {
-				pageBlock = lyr3[0];
-				pageBlockEls = $(opts.focusableElements,pageBlock);
-				if (opts.focusInput)
-					setTimeout(focus, 20);
-			}
-			else
-				center(lyr3[0], opts.centerX, opts.centerY);
-
-			if (opts.timeout) {
-				// auto-unblock
-				var to = setTimeout(function() {
-					if (full)
-						$.unblockUI(opts);
+					lyr2 = $('<div class="blockUI blockOverlay" style="z-index:'+ (z++) +';display:none;border:none;margin:0;padding:0;width:100%;height:100%;top:0;left:0"></div>');
+	
+				if (opts.theme && full) {
+					s = '<div class="blockUI ' + opts.blockMsgClass + ' blockPage ui-dialog ui-widget ui-corner-all" style="z-index:'+(z+10)+';display:none;position:fixed">';
+					if ( opts.title ) {
+						s += '<div class="ui-widget-header ui-dialog-titlebar ui-corner-all blockTitle">'+(opts.title || '&nbsp;')+'</div>';
+					}
+					s += '<div class="ui-widget-content ui-dialog-content"></div>';
+					s += '</div>';
+				}
+				else if (opts.theme) {
+					s = '<div class="blockUI ' + opts.blockMsgClass + ' blockElement ui-dialog ui-widget ui-corner-all" style="z-index:'+(z+10)+';display:none;position:absolute">';
+					if ( opts.title ) {
+						s += '<div class="ui-widget-header ui-dialog-titlebar ui-corner-all blockTitle">'+(opts.title || '&nbsp;')+'</div>';
+					}
+					s += '<div class="ui-widget-content ui-dialog-content"></div>';
+					s += '</div>';
+				}
+				else if (full) {
+					s = '<div class="blockUI ' + opts.blockMsgClass + ' blockPage" style="z-index:'+(z+10)+';display:none;position:fixed"></div>';
+				}
+				else {
+					s = '<div class="blockUI ' + opts.blockMsgClass + ' blockElement" style="z-index:'+(z+10)+';display:none;position:absolute"></div>';
+				}
+				lyr3 = $(s);
+	
+				// if we have a message, style it
+				if (msg) {
+					if (opts.theme) {
+						lyr3.css(themedCSS);
+						lyr3.addClass('ui-widget-content');
+					}
 					else
-						$(el).unblock(opts);
-				}, opts.timeout);
-				$(el).data('blockUI.timeout', to);
-			}
-		}
-
-		// remove the block
-		function remove(el, opts) {
-			var count;
-			var full = (el == window);
-			var $el = $(el);
-			var data = $el.data('blockUI.history');
-			var to = $el.data('blockUI.timeout');
-			if (to) {
-				clearTimeout(to);
-				$el.removeData('blockUI.timeout');
-			}
-			opts = $.extend({}, $.blockUI.defaults, opts || {});
-			bind(0, el, opts); // unbind events
-
-			if (opts.onUnblock === null) {
-				opts.onUnblock = $el.data('blockUI.onUnblock');
-				$el.removeData('blockUI.onUnblock');
-			}
-
-			var els;
-			if (full) // crazy selector to handle odd field errors in ie6/7
-				els = $('body').children().filter('.blockUI').add('body > .blockUI');
-			else
-				els = $el.find('>.blockUI');
-
-			// fix cursor issue
-			if ( opts.cursorReset ) {
-				if ( els.length > 1 )
-					els[1].style.cursor = opts.cursorReset;
-				if ( els.length > 2 )
-					els[2].style.cursor = opts.cursorReset;
-			}
-
-			if (full)
-				pageBlock = pageBlockEls = null;
-
-			if (opts.fadeOut) {
-				count = els.length;
-				els.stop().fadeOut(opts.fadeOut, function() {
-					if ( --count === 0)
-						reset(els,data,opts,el);
+						lyr3.css(css);
+				}
+	
+				// style the overlay
+				if (!opts.theme /*&& (!opts.applyPlatformOpacityRules)*/)
+					lyr2.css(opts.overlayCSS);
+				lyr2.css('position', full ? 'fixed' : 'absolute');
+	
+				// make iframe layer transparent in IE
+				if (msie || opts.forceIframe)
+					lyr1.css('opacity',0.0);
+	
+				//$([lyr1[0],lyr2[0],lyr3[0]]).appendTo(full ? 'body' : el);
+				var layers = [lyr1,lyr2,lyr3], $par = full ? $('body') : $(el);
+				$.each(layers, function() {
+					this.appendTo($par);
 				});
+	
+				if (opts.theme && opts.draggable && $.fn.draggable) {
+					lyr3.draggable({
+						handle: '.ui-dialog-titlebar',
+						cancel: 'li'
+					});
+				}
+	
+				// ie7 must use absolute positioning in quirks mode and to account for activex issues (when scrolling)
+				var expr = setExpr && (!$.support.boxModel || $('object,embed', full ? null : el).length > 0);
+				if (ie6 || expr) {
+					// give body 100% height
+					if (full && opts.allowBodyStretch && $.support.boxModel)
+						$('html,body').css('height','100%');
+	
+					// fix ie6 issue when blocked element has a border width
+					if ((ie6 || !$.support.boxModel) && !full) {
+						var t = sz(el,'borderTopWidth'), l = sz(el,'borderLeftWidth');
+						var fixT = t ? '(0 - '+t+')' : 0;
+						var fixL = l ? '(0 - '+l+')' : 0;
+					}
+	
+					// simulate fixed position
+					$.each(layers, function(i,o) {
+						var s = o[0].style;
+						s.position = 'absolute';
+						if (i < 2) {
+							if (full)
+								s.setExpression('height','Math.max(document.body.scrollHeight, document.body.offsetHeight) - (jQuery.support.boxModel?0:'+opts.quirksmodeOffsetHack+') + "px"');
+							else
+								s.setExpression('height','this.parentNode.offsetHeight + "px"');
+							if (full)
+								s.setExpression('width','jQuery.support.boxModel && document.documentElement.clientWidth || document.body.clientWidth + "px"');
+							else
+								s.setExpression('width','this.parentNode.offsetWidth + "px"');
+							if (fixL) s.setExpression('left', fixL);
+							if (fixT) s.setExpression('top', fixT);
+						}
+						else if (opts.centerY) {
+							if (full) s.setExpression('top','(document.documentElement.clientHeight || document.body.clientHeight) / 2 - (this.offsetHeight / 2) + (blah = document.documentElement.scrollTop ? document.documentElement.scrollTop : document.body.scrollTop) + "px"');
+							s.marginTop = 0;
+						}
+						else if (!opts.centerY && full) {
+							var top = (opts.css && opts.css.top) ? parseInt(opts.css.top, 10) : 0;
+							var expression = '((document.documentElement.scrollTop ? document.documentElement.scrollTop : document.body.scrollTop) + '+top+') + "px"';
+							s.setExpression('top',expression);
+						}
+					});
+				}
+	
+				// show the message
+				if (msg) {
+					if (opts.theme)
+						lyr3.find('.ui-widget-content').append(msg);
+					else
+						lyr3.append(msg);
+					if (msg.jquery || msg.nodeType)
+						$(msg).show();
+				}
+	
+				if ((msie || opts.forceIframe) && opts.showOverlay)
+					lyr1.show(); // opacity is zero
+				if (opts.fadeIn) {
+					var cb = opts.onBlock ? opts.onBlock : noOp;
+					var cb1 = (opts.showOverlay && !msg) ? cb : noOp;
+					var cb2 = msg ? cb : noOp;
+					if (opts.showOverlay)
+						lyr2._fadeIn(opts.fadeIn, cb1);
+					if (msg)
+						lyr3._fadeIn(opts.fadeIn, cb2);
+				}
+				else {
+					if (opts.showOverlay)
+						lyr2.show();
+					if (msg)
+						lyr3.show();
+					if (opts.onBlock)
+						opts.onBlock.bind(lyr3)();
+				}
+	
+				// bind key and mouse events
+				bind(1, el, opts);
+	
+				if (full) {
+					pageBlock = lyr3[0];
+					pageBlockEls = $(opts.focusableElements,pageBlock);
+					if (opts.focusInput)
+						setTimeout(focus, 20);
+				}
+				else
+					center(lyr3[0], opts.centerX, opts.centerY);
+	
+				if (opts.timeout) {
+					// auto-unblock
+					var to = setTimeout(function() {
+						if (full)
+							$.unblockUI(opts);
+						else
+							$(el).unblock(opts);
+					}, opts.timeout);
+					$(el).data('blockUI.timeout', to);
+				}
 			}
-			else
-				reset(els, data, opts, el);
-		}
-
-		// move blocking element back into the DOM where it started
-		function reset(els,data,opts,el) {
-			var $el = $(el);
-			if ( $el.data('blockUI.isBlocked') )
-				return;
-
-			els.each(function(i,o) {
-				// remove via DOM calls so we don't lose event handlers
-				if (this.parentNode)
-					this.parentNode.removeChild(this);
-			});
-
-			if (data && data.el) {
-				data.el.style.display = data.display;
-				data.el.style.position = data.position;
-				if (data.parent)
-					data.parent.appendChild(data.el);
-				$el.removeData('blockUI.history');
+	
+			// remove the block
+			function remove(el, opts) {
+				var count;
+				var full = (el == window);
+				var $el = $(el);
+				var data = $el.data('blockUI.history');
+				var to = $el.data('blockUI.timeout');
+				if (to) {
+					clearTimeout(to);
+					$el.removeData('blockUI.timeout');
+				}
+				opts = $.extend({}, $.blockUI.defaults, opts || {});
+				bind(0, el, opts); // unbind events
+	
+				if (opts.onUnblock === null) {
+					opts.onUnblock = $el.data('blockUI.onUnblock');
+					$el.removeData('blockUI.onUnblock');
+				}
+	
+				var els;
+				if (full) // crazy selector to handle odd field errors in ie6/7
+					els = $('body').children().filter('.blockUI').add('body > .blockUI');
+				else
+					els = $el.find('>.blockUI');
+	
+				// fix cursor issue
+				if ( opts.cursorReset ) {
+					if ( els.length > 1 )
+						els[1].style.cursor = opts.cursorReset;
+					if ( els.length > 2 )
+						els[2].style.cursor = opts.cursorReset;
+				}
+	
+				if (full)
+					pageBlock = pageBlockEls = null;
+	
+				if (opts.fadeOut) {
+					count = els.length;
+					els.stop().fadeOut(opts.fadeOut, function() {
+						if ( --count === 0)
+							reset(els,data,opts,el);
+					});
+				}
+				else
+					reset(els, data, opts, el);
 			}
-
-			if ($el.data('blockUI.static')) {
-				$el.css('position', 'static'); // #22
+	
+			// move blocking element back into the DOM where it started
+			function reset(els,data,opts,el) {
+				var $el = $(el);
+				if ( $el.data('blockUI.isBlocked') )
+					return;
+	
+				els.each(function(i,o) {
+					// remove via DOM calls so we don't lose event handlers
+					if (this.parentNode)
+						this.parentNode.removeChild(this);
+				});
+	
+				if (data && data.el) {
+					data.el.style.display = data.display;
+					data.el.style.position = data.position;
+					data.el.style.cursor = 'default'; // #59
+					if (data.parent)
+						data.parent.appendChild(data.el);
+					$el.removeData('blockUI.history');
+				}
+	
+				if ($el.data('blockUI.static')) {
+					$el.css('position', 'static'); // #22
+				}
+	
+				if (typeof opts.onUnblock == 'function')
+					opts.onUnblock(el,opts);
+	
+				// fix issue in Safari 6 where block artifacts remain until reflow
+				var body = $(document.body), w = body.width(), cssW = body[0].style.width;
+				body.width(w-1).width(w);
+				body[0].style.width = cssW;
 			}
-
-			if (typeof opts.onUnblock == 'function')
-				opts.onUnblock(el,opts);
-
-			// fix issue in Safari 6 where block artifacts remain until reflow
-			var body = $(document.body), w = body.width(), cssW = body[0].style.width;
-			body.width(w-1).width(w);
-			body[0].style.width = cssW;
-		}
-
-		// bind/unbind the handler
-		function bind(b, el, opts) {
-			var full = el == window, $el = $(el);
-
-			// don't bother unbinding if there is nothing to unbind
-			if (!b && (full && !pageBlock || !full && !$el.data('blockUI.isBlocked')))
-				return;
-
-			$el.data('blockUI.isBlocked', b);
-
-			// don't bind events when overlay is not in use or if bindEvents is false
-			if (!full || !opts.bindEvents || (b && !opts.showOverlay))
-				return;
-
-			// bind anchors and inputs for mouse and key events
-			var events = 'mousedown mouseup keydown keypress keyup touchstart touchend touchmove';
-			if (b)
-				$(document).bind(events, opts, handler);
-			else
-				$(document).unbind(events, handler);
-
-		// former impl...
-		//		var $e = $('a,:input');
-		//		b ? $e.bind(events, opts, handler) : $e.unbind(events, handler);
-		}
-
-		// event handler to suppress keyboard/mouse events when blocking
-		function handler(e) {
-			// allow tab navigation (conditionally)
-			if (e.type === 'keydown' && e.keyCode && e.keyCode == 9) {
-				if (pageBlock && e.data.constrainTabKey) {
-					var els = pageBlockEls;
-					var fwd = !e.shiftKey && e.target === els[els.length-1];
-					var back = e.shiftKey && e.target === els[0];
-					if (fwd || back) {
-						setTimeout(function(){focus(back);},10);
-						return false;
+	
+			// bind/unbind the handler
+			function bind(b, el, opts) {
+				var full = el == window, $el = $(el);
+	
+				// don't bother unbinding if there is nothing to unbind
+				if (!b && (full && !pageBlock || !full && !$el.data('blockUI.isBlocked')))
+					return;
+	
+				$el.data('blockUI.isBlocked', b);
+	
+				// don't bind events when overlay is not in use or if bindEvents is false
+				if (!full || !opts.bindEvents || (b && !opts.showOverlay))
+					return;
+	
+				// bind anchors and inputs for mouse and key events
+				var events = 'mousedown mouseup keydown keypress keyup touchstart touchend touchmove';
+				if (b)
+					$(document).bind(events, opts, handler);
+				else
+					$(document).unbind(events, handler);
+	
+			// former impl...
+			//		var $e = $('a,:input');
+			//		b ? $e.bind(events, opts, handler) : $e.unbind(events, handler);
+			}
+	
+			// event handler to suppress keyboard/mouse events when blocking
+			function handler(e) {
+				// allow tab navigation (conditionally)
+				if (e.type === 'keydown' && e.keyCode && e.keyCode == 9) {
+					if (pageBlock && e.data.constrainTabKey) {
+						var els = pageBlockEls;
+						var fwd = !e.shiftKey && e.target === els[els.length-1];
+						var back = e.shiftKey && e.target === els[0];
+						if (fwd || back) {
+							setTimeout(function(){focus(back);},10);
+							return false;
+						}
 					}
 				}
+				var opts = e.data;
+				var target = $(e.target);
+				if (target.hasClass('blockOverlay') && opts.onOverlayClick)
+					opts.onOverlayClick(e);
+	
+				// allow events within the message content
+				if (target.parents('div.' + opts.blockMsgClass).length > 0)
+					return true;
+	
+				// allow events for content that is not being blocked
+				return target.parents().children().filter('div.blockUI').length === 0;
 			}
-			var opts = e.data;
-			var target = $(e.target);
-			if (target.hasClass('blockOverlay') && opts.onOverlayClick)
-				opts.onOverlayClick();
-
-			// allow events within the message content
-			if (target.parents('div.' + opts.blockMsgClass).length > 0)
-				return true;
-
-			// allow events for content that is not being blocked
-			return target.parents().children().filter('div.blockUI').length === 0;
+	
+			function focus(back) {
+				if (!pageBlockEls)
+					return;
+				var e = pageBlockEls[back===true ? pageBlockEls.length-1 : 0];
+				if (e)
+					e.focus();
+			}
+	
+			function center(el, x, y) {
+				var p = el.parentNode, s = el.style;
+				var l = ((p.offsetWidth - el.offsetWidth)/2) - sz(p,'borderLeftWidth');
+				var t = ((p.offsetHeight - el.offsetHeight)/2) - sz(p,'borderTopWidth');
+				if (x) s.left = l > 0 ? (l+'px') : '0';
+				if (y) s.top  = t > 0 ? (t+'px') : '0';
+			}
+	
+			function sz(el, p) {
+				return parseInt($.css(el,p),10)||0;
+			}
+	
 		}
-
-		function focus(back) {
-			if (!pageBlockEls)
-				return;
-			var e = pageBlockEls[back===true ? pageBlockEls.length-1 : 0];
-			if (e)
-				e.focus();
+	
+	
+		/*global define:true */
+		if (typeof define === 'function' && define.amd && define.amd.jQuery) {
+			define(['jquery'], setup);
+		} else {
+			setup(jQuery);
 		}
-
-		function center(el, x, y) {
-			var p = el.parentNode, s = el.style;
-			var l = ((p.offsetWidth - el.offsetWidth)/2) - sz(p,'borderLeftWidth');
-			var t = ((p.offsetHeight - el.offsetHeight)/2) - sz(p,'borderTopWidth');
-			if (x) s.left = l > 0 ? (l+'px') : '0';
-			if (y) s.top  = t > 0 ? (t+'px') : '0';
-		}
-
-		function sz(el, p) {
-			return parseInt($.css(el,p),10)||0;
-		}
-
-	}
-
-
-	/*global define:true */
-	if (typeof define === 'function' && define.amd && define.amd.jQuery) {
-		define(['jquery'], setup);
-	} else {
-		setup(jQuery);
-	}
-
-})();
+	
+	})();
+/*! Idle Timer - v1.1.1 - 2020-06-25
+* https://github.com/thorst/jquery-idletimer
+* Copyright (c) 2020 Paul Irish; Licensed MIT */
 /*
- * Copyright (c) 2009 Nicholas C. Zakas
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
+	mousewheel (deprecated) -> IE6.0, Chrome, Opera, Safari
+	DOMMouseScroll (deprecated) -> Firefox 1.0
+	wheel (standard) -> Chrome 31, Firefox 17, IE9, Firefox Mobile 17.0
 
-( function( $ ) {
+	//No need to use, use DOMMouseScroll
+	MozMousePixelScroll -> Firefox 3.5, Firefox Mobile 1.0
 
-$.idleTimer = function( firstParam, elem, opts ) {
-
-	// defaults that are to be stored as instance props on the elem
-	opts = $.extend( {
-		startImmediately: true,   //starts a timeout as soon as the timer is set up
-		idle: false,              //indicates if the user is idle
-		enabled: true,            //indicates if the idle timer is enabled
-		timeout: 30000,           //the amount of time (ms) before the user is considered idle
-		events: "mousemove keydown DOMMouseScroll mousewheel mousedown touchstart touchmove" // activity is one of these events
-	}, opts );
-
-
-	elem = elem || document;
-
-	var jqElem = $( elem ),
-		obj = jqElem.data("idleTimerObj") || {},
-
-		/* (intentionally not documented)
-		 * Toggles the idle state and fires an appropriate event.
-		 * @return {void}
-		 */
-		toggleIdleState = function( myelem ) {
-
-			// curse you, mozilla setTimeout lateness bug!
-			if ( typeof myelem === "number" ) {
-				myelem = undefined;
-			}
-
-			var obj = $.data( myelem || elem, "idleTimerObj" );
-
-			//toggle the state
-			obj.idle = !obj.idle;
-
-			// reset timeout
-			var elapsed = ( +new Date() ) - obj.olddate;
-			obj.olddate = +new Date();
-
-			// handle Chrome always triggering idle after js alert or comfirm popup
-			if ( obj.idle && ( elapsed < opts.timeout ) ) {
-				obj.idle = false;
-				clearTimeout( $.idleTimer.tId );
-				if ( opts.enabled ) {
-					$.idleTimer.tId = setTimeout( toggleIdleState, opts.timeout );
-				}
-				return;
-			}
-
-			// create a custom event, but first, store the new state on the element
-			// and then append that string to a namespace
-			var event = $.Event( $.data( elem, "idleTimer", obj.idle ? "idle" : "active" ) + ".idleTimer" );
-			$( elem ).trigger( event );
-		},
-
-		/**
-		 * Stops the idle timer. This removes appropriate event handlers
-		 * and cancels any pending timeouts.
-		 * @return {void}
-		 * @method stop
-		 * @static
-		 */
-		stop = function( jqElem ) {
-
-			var obj = jqElem.data("idleTimerObj") || {};
-
-			//set to disabled
-			obj.enabled = false;
-
-			//clear any pending timeouts
-			clearTimeout( obj.tId );
-
-			//detach the event handlers
-			jqElem.off(".idleTimer");
-		};
-
-	obj.olddate = obj.olddate || +new Date();
-
-	if ( typeof firstParam === "number" ) {
-		opts.timeout = firstParam;
-	} else if ( firstParam === "destroy" ) {
-		stop( jqElem );
-		return this;
-	} else if ( firstParam === "getElapsedTime" ) {
-		return ( +new Date() ) - obj.olddate;
-	}
-
-
-	/* (intentionally not documented)
-	 * Handles a user event indicating that the user isn't idle.
-	 * @param {Event} event A DOM2-normalized event object.
-	 * @return {void}
-	 */
-	jqElem.on( $.trim( ( opts.events + " " ).split(" ").join(".idleTimer ") ), function() {
-		var obj = $.data( this, "idleTimerObj" );
-
-		//clear any existing timeout
-		clearTimeout( obj.tId );
-
-		//if the idle timer is enabled
-		if ( obj.enabled ){
-			//if it's idle, that means the user is no longer idle
-			if ( obj.idle ){
-				toggleIdleState( this );
-			}
-
-			//set a new timeout
-			obj.tId = setTimeout( toggleIdleState, obj.timeout );
-		}
-	});
-
-	obj.idle = opts.idle;
-	obj.enabled = opts.enabled;
-	obj.timeout = opts.timeout;
-
-	//set a timeout to toggle state. May wish to omit this in some situations
-	if ( opts.startImmediately ) {
-		obj.tId = setTimeout( toggleIdleState, obj.timeout );
-	}
-
-	// assume the user is active for the first x seconds.
-	jqElem.data( "idleTimer", "active" );
-
-	// store our instance on the object
-	jqElem.data( "idleTimerObj", obj );
-};
-
-$.fn.idleTimer = function( firstParam, opts ) {
-	// Allow omission of opts for backward compatibility
-	if ( !opts ) {
-		opts = {};
-	}
-
-	if ( this[0] ){
-		$.idleTimer( firstParam, this[0], opts );
-	}
-
-	return this;
-};
-
-})( jQuery );
-// Generated by CoffeeScript 1.6.2
-/*
-jQuery Waypoints - v2.0.3
-Copyright (c) 2011-2013 Caleb Troughton
-Dual licensed under the MIT license and GPL license.
-https://github.com/imakewebthings/jquery-waypoints/blob/master/licenses.txt
+	//Events
+	WheelEvent -> see wheel
+	MouseWheelEvent -> see mousewheel
+	MouseScrollEvent -> Firefox 3.5, Firefox Mobile 1.0
 */
+(function ($) {
+
+    $.idleTimer = function (firstParam, elem) {
+        var opts;
+        if ( typeof firstParam === "object" ) {
+            opts = firstParam;
+            firstParam = null;
+        } else if (typeof firstParam === "number") {
+            opts = { timeout: firstParam };
+            firstParam = null;
+        }
+
+        // element to watch
+        elem = elem || document;
+
+        // defaults that are to be stored as instance props on the elem
+        opts = $.extend({
+            idle: false,                // indicates if the user is idle
+            timeout: 30000,             // the amount of time (ms) before the user is considered idle
+            events: "mousemove keydown wheel DOMMouseScroll mousewheel mousedown touchstart touchmove MSPointerDown MSPointerMove" // define active events
+        }, opts);
+
+        var jqElem = $(elem),
+            obj = jqElem.data("idleTimerObj") || {},
+
+            /* (intentionally not documented)
+             * Toggles the idle state and fires an appropriate event.
+             * @return {void}
+             */
+            toggleIdleState = function (e) {
+                var obj = $.data(elem, "idleTimerObj") || {};
+
+                // toggle the state
+                obj.idle = !obj.idle;
+
+                // store toggle state date time
+                obj.olddate = +new Date();
+
+                // create a custom event, with state and name space
+                var event = $.Event((obj.idle ? "idle" : "active") + ".idleTimer");
+
+                // trigger event on object with elem and copy of obj
+                $(elem).trigger(event, [elem, $.extend({}, obj), e]);
+            },
+            /**
+             * Handle event triggers
+             * @return {void}
+             * @method event
+             * @static
+             */
+            handleEvent = function (e) {
+                var obj = $.data(elem, "idleTimerObj") || {};
+
+		// ignore writting to storage unless related to idleTimer
+                if (e.type === "storage" && e.originalEvent.key !== obj.timerSyncId) {
+                    return;
+                }
+
+                // this is already paused, ignore events for now
+                if (obj.remaining != null) { return; }
+
+                /*
+                mousemove is kinda buggy, it can be triggered when it should be idle.
+                Typically is happening between 115 - 150 milliseconds after idle triggered.
+                @psyafter & @kaellis report "always triggered if using modal (jQuery ui, with overlay)"
+                @thorst has similar issues on ios7 "after $.scrollTop() on text area"
+                */
+                if (e.type === "mousemove") {
+                    // if coord are same, it didn't move
+                    if (e.pageX === obj.pageX && e.pageY === obj.pageY) {
+                        return;
+                    }
+                    // if coord don't exist how could it move
+                    if (typeof e.pageX === "undefined" && typeof e.pageY === "undefined") {
+                        return;
+                    }
+                    // under 200 ms is hard to do, and you would have to stop, as continuous activity will bypass this
+                    var elapsed = (+new Date()) - obj.olddate;
+                    if (elapsed < 200) {
+                        return;
+                    }
+                }
+
+                // clear any existing timeout
+                clearTimeout(obj.tId);
+
+                // if the idle timer is enabled, flip
+                if (obj.idle) {
+                    toggleIdleState(e);
+                }
+
+                // store when user was last active
+                obj.lastActive = +new Date();
+
+                // update mouse coord
+                obj.pageX = e.pageX;
+                obj.pageY = e.pageY;
+
+                // sync lastActive
+                if (e.type !== "storage" && obj.timerSyncId) {
+                  if (typeof(localStorage) !== "undefined") {
+                    localStorage.setItem(obj.timerSyncId, obj.lastActive);
+                  }
+                }
+
+                // set a new timeout
+                obj.tId = setTimeout(toggleIdleState, obj.timeout);
+            },
+            /**
+             * Restore initial settings and restart timer
+             * @return {void}
+             * @method reset
+             * @static
+             */
+            reset = function () {
+
+                var obj = $.data(elem, "idleTimerObj") || {};
+
+                // reset settings
+                obj.idle = obj.idleBackup;
+                obj.olddate = +new Date();
+                obj.lastActive = obj.olddate;
+                obj.remaining = null;
+
+                // reset Timers
+                clearTimeout(obj.tId);
+                if (!obj.idle) {
+                    obj.tId = setTimeout(toggleIdleState, obj.timeout);
+                }
+
+            },
+            /**
+             * Store remaining time, stop timer
+             * You can pause from an idle OR active state
+             * @return {void}
+             * @method pause
+             * @static
+             */
+            pause = function () {
+
+                var obj = $.data(elem, "idleTimerObj") || {};
+
+                // this is already paused
+                if ( obj.remaining != null ) { return; }
+
+                // define how much is left on the timer
+                obj.remaining = obj.timeout - ((+new Date()) - obj.olddate);
+
+                // clear any existing timeout
+                clearTimeout(obj.tId);
+            },
+            /**
+             * Start timer with remaining value
+             * @return {void}
+             * @method resume
+             * @static
+             */
+            resume = function () {
+
+                var obj = $.data(elem, "idleTimerObj") || {};
+
+                // this isn't paused yet
+                if ( obj.remaining == null ) { return; }
+
+                // start timer
+                if ( !obj.idle ) {
+                    obj.tId = setTimeout(toggleIdleState, obj.remaining);
+                }
+
+                // clear remaining
+                obj.remaining = null;
+            },
+            /**
+             * Stops the idle timer. This removes appropriate event handlers
+             * and cancels any pending timeouts.
+             * @return {void}
+             * @method destroy
+             * @static
+             */
+            destroy = function () {
+
+                var obj = $.data(elem, "idleTimerObj") || {};
+
+                //clear any pending timeouts
+                clearTimeout(obj.tId);
+
+                //Remove data
+                jqElem.removeData("idleTimerObj");
+
+                //detach the event handlers
+                jqElem.off("._idleTimer");
+            },
+            /**
+            * Returns the time until becoming idle
+            * @return {number}
+            * @method remainingtime
+            * @static
+            */
+            remainingtime = function () {
+
+                var obj = $.data(elem, "idleTimerObj") || {};
+
+                //If idle there is no time remaining
+                if ( obj.idle ) { return 0; }
+
+                //If its paused just return that
+                if ( obj.remaining != null ) { return obj.remaining; }
+
+                //Determine remaining, if negative idle didn't finish flipping, just return 0
+                var remaining = obj.timeout - ((+new Date()) - obj.lastActive);
+                if (remaining < 0) { remaining = 0; }
+
+                //If this is paused return that number, else return current remaining
+                return remaining;
+            };
 
 
+        // determine which function to call
+        if (firstParam === null && typeof obj.idle !== "undefined") {
+            // they think they want to init, but it already is, just reset
+            reset();
+            return jqElem;
+        } else if (firstParam === null) {
+            // they want to init
+        } else if (firstParam !== null && typeof obj.idle === "undefined") {
+            // they want to do something, but it isnt init
+            // not sure the best way to handle this
+            return false;
+        } else if (firstParam === "destroy") {
+            destroy();
+            return jqElem;
+        } else if (firstParam === "pause") {
+            pause();
+            return jqElem;
+        } else if (firstParam === "resume") {
+            resume();
+            return jqElem;
+        } else if (firstParam === "reset") {
+            reset();
+            return jqElem;
+        } else if (firstParam === "getRemainingTime") {
+            return remainingtime();
+        } else if (firstParam === "getElapsedTime") {
+            return (+new Date()) - obj.olddate;
+        } else if (firstParam === "getLastActiveTime") {
+            return obj.lastActive;
+        } else if (firstParam === "isIdle") {
+            return obj.idle;
+        }
+
+	// Test via a getter in the options object to see if the passive property is accessed
+	// This isnt working in jquery, though is planned for 4.0
+	// https://github.com/jquery/jquery/issues/2871
+        /*var supportsPassive = false;
+        try {
+            var Popts = Object.defineProperty({}, "passive", {
+                get: function() {
+                    supportsPassive = true;
+                }
+            });
+            window.addEventListener("test", null, Popts);
+        } catch (e) {}
+	*/
+
+        /* (intentionally not documented)
+         * Handles a user event indicating that the user isn't idle. namespaced with internal idleTimer
+         * @param {Event} event A DOM2-normalized event object.
+         * @return {void}
+         */
+        jqElem.on((opts.events + " ").split(" ").join("._idleTimer ").trim(), function (e) {
+            handleEvent(e);
+        });
+        //}, supportsPassive ? { passive: true } : false);
+
+        if (opts.timerSyncId) {
+            $(window).on("storage", handleEvent);
+        }
+
+        // Internal Object Properties, This isn't all necessary, but we
+        // explicitly define all keys here so we know what we are working with
+        obj = $.extend({}, {
+            olddate : +new Date(),          // the last time state changed
+            lastActive: +new Date(),       // the last time timer was active
+            idle : opts.idle,               // current state
+            idleBackup : opts.idle,         // backup of idle parameter since it gets modified
+            timeout : opts.timeout,         // the interval to change state
+            remaining : null,               // how long until state changes
+            timerSyncId : opts.timerSyncId, // localStorage key to use for syncing this timer
+            tId : null,                     // the idle timer setTimeout
+            pageX : null,                   // used to store the mouse coord
+            pageY : null
+        });
+
+        // set a timeout to toggle state. May wish to omit this in some situations
+        if (!obj.idle) {
+            obj.tId = setTimeout(toggleIdleState, obj.timeout);
+        }
+
+        // store our instance on the object
+        $.data(elem, "idleTimerObj", obj);
+
+        return jqElem;
+    };
+
+    // This allows binding to element
+    $.fn.idleTimer = function (firstParam) {
+        if (this[0]) {
+            return $.idleTimer(firstParam, this[0]);
+        }
+
+        return this;
+    };
+
+})(jQuery);
+/*!
+Waypoints - 4.0.1
+Copyright © 2011-2016 Caleb Troughton
+Licensed under the MIT license.
+https://github.com/imakewebthings/waypoints/blob/master/licenses.txt
+*/
 (function() {
-  var __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; },
-    __slice = [].slice;
+  'use strict'
 
-  (function(root, factory) {
-    if (typeof define === 'function' && define.amd) {
-      return define('waypoints', ['jquery'], function($) {
-        return factory($, root);
-      });
-    } else {
-      return factory(root.jQuery, root);
+  var keyCounter = 0
+  var allWaypoints = {}
+
+  /* http://imakewebthings.com/waypoints/api/waypoint */
+  function Waypoint(options) {
+    if (!options) {
+      throw new Error('No options passed to Waypoint constructor')
     }
-  })(this, function($, window) {
-    var $w, Context, Waypoint, allWaypoints, contextCounter, contextKey, contexts, isTouch, jQMethods, methods, resizeEvent, scrollEvent, waypointCounter, waypointKey, wp, wps;
+    if (!options.element) {
+      throw new Error('No element option passed to Waypoint constructor')
+    }
+    if (!options.handler) {
+		console.log("options", options);
+      throw new Error('No handler option passed to Waypoint constructor')
+    }
 
-    $w = $(window);
-    isTouch = __indexOf.call(window, 'ontouchstart') >= 0;
-    allWaypoints = {
-      horizontal: {},
-      vertical: {}
-    };
-    contextCounter = 1;
-    contexts = {};
-    contextKey = 'waypoints-context-id';
-    resizeEvent = 'resize.waypoints';
-    scrollEvent = 'scroll.waypoints';
-    waypointCounter = 1;
-    waypointKey = 'waypoints-waypoint-ids';
-    wp = 'waypoint';
-    wps = 'waypoints';
-    Context = (function() {
-      function Context($element) {
-        var _this = this;
+    this.key = 'waypoint-' + keyCounter
+    this.options = Waypoint.Adapter.extend({}, Waypoint.defaults, options)
+    this.element = this.options.element
+    this.adapter = new Waypoint.Adapter(this.element)
+    this.callback = options.handler
+    this.axis = this.options.horizontal ? 'horizontal' : 'vertical'
+    this.enabled = this.options.enabled
+    this.triggerPoint = null
+    this.group = Waypoint.Group.findOrCreate({
+      name: this.options.group,
+      axis: this.axis
+    })
+    this.context = Waypoint.Context.findOrCreateByElement(this.options.context)
 
-        this.$element = $element;
-        this.element = $element[0];
-        this.didResize = false;
-        this.didScroll = false;
-        this.id = 'context' + contextCounter++;
-        this.oldScroll = {
-          x: $element.scrollLeft(),
-          y: $element.scrollTop()
-        };
-        this.waypoints = {
-          horizontal: {},
-          vertical: {}
-        };
-        $element.data(contextKey, this.id);
-        contexts[this.id] = this;
-        $element.bind(scrollEvent, function() {
-          var scrollHandler;
+    if (Waypoint.offsetAliases[this.options.offset]) {
+      this.options.offset = Waypoint.offsetAliases[this.options.offset]
+    }
+    this.group.add(this)
+    this.context.add(this)
+    allWaypoints[this.key] = this
+    keyCounter += 1
+  }
 
-          if (!(_this.didScroll || isTouch)) {
-            _this.didScroll = true;
-            scrollHandler = function() {
-              _this.doScroll();
-              return _this.didScroll = false;
-            };
-            return window.setTimeout(scrollHandler, $[wps].settings.scrollThrottle);
+  /* Private */
+  Waypoint.prototype.queueTrigger = function(direction) {
+    this.group.queueTrigger(this, direction)
+  }
+
+  /* Private */
+  Waypoint.prototype.trigger = function(args) {
+    if (!this.enabled) {
+      return
+    }
+    if (this.callback) {
+      this.callback.apply(this, args)
+    }
+  }
+
+  /* Public */
+  /* http://imakewebthings.com/waypoints/api/destroy */
+  Waypoint.prototype.destroy = function() {
+    this.context.remove(this)
+    this.group.remove(this)
+    delete allWaypoints[this.key]
+  }
+
+  /* Public */
+  /* http://imakewebthings.com/waypoints/api/disable */
+  Waypoint.prototype.disable = function() {
+    this.enabled = false
+    return this
+  }
+
+  /* Public */
+  /* http://imakewebthings.com/waypoints/api/enable */
+  Waypoint.prototype.enable = function() {
+    this.context.refresh()
+    this.enabled = true
+    return this
+  }
+
+  /* Public */
+  /* http://imakewebthings.com/waypoints/api/next */
+  Waypoint.prototype.next = function() {
+    return this.group.next(this)
+  }
+
+  /* Public */
+  /* http://imakewebthings.com/waypoints/api/previous */
+  Waypoint.prototype.previous = function() {
+    return this.group.previous(this)
+  }
+
+  /* Private */
+  Waypoint.invokeAll = function(method) {
+    var allWaypointsArray = []
+    for (var waypointKey in allWaypoints) {
+      allWaypointsArray.push(allWaypoints[waypointKey])
+    }
+    for (var i = 0, end = allWaypointsArray.length; i < end; i++) {
+      allWaypointsArray[i][method]()
+    }
+  }
+
+  /* Public */
+  /* http://imakewebthings.com/waypoints/api/destroy-all */
+  Waypoint.destroyAll = function() {
+    Waypoint.invokeAll('destroy')
+  }
+
+  /* Public */
+  /* http://imakewebthings.com/waypoints/api/disable-all */
+  Waypoint.disableAll = function() {
+    Waypoint.invokeAll('disable')
+  }
+
+  /* Public */
+  /* http://imakewebthings.com/waypoints/api/enable-all */
+  Waypoint.enableAll = function() {
+    Waypoint.Context.refreshAll()
+    for (var waypointKey in allWaypoints) {
+      allWaypoints[waypointKey].enabled = true
+    }
+    return this
+  }
+
+  /* Public */
+  /* http://imakewebthings.com/waypoints/api/refresh-all */
+  Waypoint.refreshAll = function() {
+    Waypoint.Context.refreshAll()
+  }
+
+  /* Public */
+  /* http://imakewebthings.com/waypoints/api/viewport-height */
+  Waypoint.viewportHeight = function() {
+    return window.innerHeight || document.documentElement.clientHeight
+  }
+
+  /* Public */
+  /* http://imakewebthings.com/waypoints/api/viewport-width */
+  Waypoint.viewportWidth = function() {
+    return document.documentElement.clientWidth
+  }
+
+  Waypoint.adapters = []
+
+  Waypoint.defaults = {
+    context: window,
+    continuous: true,
+    enabled: true,
+    group: 'default',
+    horizontal: false,
+    offset: 0
+  }
+
+  Waypoint.offsetAliases = {
+    'bottom-in-view': function() {
+      return this.context.innerHeight() - this.adapter.outerHeight()
+    },
+    'right-in-view': function() {
+      return this.context.innerWidth() - this.adapter.outerWidth()
+    }
+  }
+
+  window.Waypoint = Waypoint
+}())
+;(function() {
+  'use strict'
+
+  function requestAnimationFrameShim(callback) {
+    window.setTimeout(callback, 1000 / 60)
+  }
+
+  var keyCounter = 0
+  var contexts = {}
+  var Waypoint = window.Waypoint
+  var oldWindowLoad = window.onload
+
+  /* http://imakewebthings.com/waypoints/api/context */
+  function Context(element) {
+    this.element = element
+    this.Adapter = Waypoint.Adapter
+    this.adapter = new this.Adapter(element)
+    this.key = 'waypoint-context-' + keyCounter
+    this.didScroll = false
+    this.didResize = false
+    this.oldScroll = {
+      x: this.adapter.scrollLeft(),
+      y: this.adapter.scrollTop()
+    }
+    this.waypoints = {
+      vertical: {},
+      horizontal: {}
+    }
+
+    element.waypointContextKey = this.key
+    contexts[element.waypointContextKey] = this
+    keyCounter += 1
+    if (!Waypoint.windowContext) {
+      Waypoint.windowContext = true
+      Waypoint.windowContext = new Context(window)
+    }
+
+    this.createThrottledScrollHandler()
+    this.createThrottledResizeHandler()
+  }
+
+  /* Private */
+  Context.prototype.add = function(waypoint) {
+    var axis = waypoint.options.horizontal ? 'horizontal' : 'vertical'
+    this.waypoints[axis][waypoint.key] = waypoint
+    this.refresh()
+  }
+
+  /* Private */
+  Context.prototype.checkEmpty = function() {
+    var horizontalEmpty = this.Adapter.isEmptyObject(this.waypoints.horizontal)
+    var verticalEmpty = this.Adapter.isEmptyObject(this.waypoints.vertical)
+    var isWindow = this.element == this.element.window
+    if (horizontalEmpty && verticalEmpty && !isWindow) {
+      this.adapter.off('.waypoints')
+      delete contexts[this.key]
+    }
+  }
+
+  /* Private */
+  Context.prototype.createThrottledResizeHandler = function() {
+    var self = this
+
+    function resizeHandler() {
+      self.handleResize()
+      self.didResize = false
+    }
+
+    this.adapter.on('resize.waypoints', function() {
+      if (!self.didResize) {
+        self.didResize = true
+        Waypoint.requestAnimationFrame(resizeHandler)
+      }
+    })
+  }
+
+  /* Private */
+  Context.prototype.createThrottledScrollHandler = function() {
+    var self = this
+    function scrollHandler() {
+      self.handleScroll()
+      self.didScroll = false
+    }
+
+    this.adapter.on('scroll.waypoints', function() {
+      if (!self.didScroll || Waypoint.isTouch) {
+        self.didScroll = true
+        Waypoint.requestAnimationFrame(scrollHandler)
+      }
+    })
+  }
+
+  /* Private */
+  Context.prototype.handleResize = function() {
+    Waypoint.Context.refreshAll()
+  }
+
+  /* Private */
+  Context.prototype.handleScroll = function() {
+    var triggeredGroups = {}
+    var axes = {
+      horizontal: {
+        newScroll: this.adapter.scrollLeft(),
+        oldScroll: this.oldScroll.x,
+        forward: 'right',
+        backward: 'left'
+      },
+      vertical: {
+        newScroll: this.adapter.scrollTop(),
+        oldScroll: this.oldScroll.y,
+        forward: 'down',
+        backward: 'up'
+      }
+    }
+
+    for (var axisKey in axes) {
+      var axis = axes[axisKey]
+      var isForward = axis.newScroll > axis.oldScroll
+      var direction = isForward ? axis.forward : axis.backward
+
+      for (var waypointKey in this.waypoints[axisKey]) {
+        var waypoint = this.waypoints[axisKey][waypointKey]
+        if (waypoint.triggerPoint === null) {
+          continue
+        }
+        var wasBeforeTriggerPoint = axis.oldScroll < waypoint.triggerPoint
+        var nowAfterTriggerPoint = axis.newScroll >= waypoint.triggerPoint
+        var crossedForward = wasBeforeTriggerPoint && nowAfterTriggerPoint
+        var crossedBackward = !wasBeforeTriggerPoint && !nowAfterTriggerPoint
+        if (crossedForward || crossedBackward) {
+          waypoint.queueTrigger(direction)
+          triggeredGroups[waypoint.group.id] = waypoint.group
+        }
+      }
+    }
+
+    for (var groupKey in triggeredGroups) {
+      triggeredGroups[groupKey].flushTriggers()
+    }
+
+    this.oldScroll = {
+      x: axes.horizontal.newScroll,
+      y: axes.vertical.newScroll
+    }
+  }
+
+  /* Private */
+  Context.prototype.innerHeight = function() {
+    /*eslint-disable eqeqeq */
+    if (this.element == this.element.window) {
+      return Waypoint.viewportHeight()
+    }
+    /*eslint-enable eqeqeq */
+    return this.adapter.innerHeight()
+  }
+
+  /* Private */
+  Context.prototype.remove = function(waypoint) {
+    delete this.waypoints[waypoint.axis][waypoint.key]
+    this.checkEmpty()
+  }
+
+  /* Private */
+  Context.prototype.innerWidth = function() {
+    /*eslint-disable eqeqeq */
+    if (this.element == this.element.window) {
+      return Waypoint.viewportWidth()
+    }
+    /*eslint-enable eqeqeq */
+    return this.adapter.innerWidth()
+  }
+
+  /* Public */
+  /* http://imakewebthings.com/waypoints/api/context-destroy */
+  Context.prototype.destroy = function() {
+    var allWaypoints = []
+    for (var axis in this.waypoints) {
+      for (var waypointKey in this.waypoints[axis]) {
+        allWaypoints.push(this.waypoints[axis][waypointKey])
+      }
+    }
+    for (var i = 0, end = allWaypoints.length; i < end; i++) {
+      allWaypoints[i].destroy()
+    }
+  }
+
+  /* Public */
+  /* http://imakewebthings.com/waypoints/api/context-refresh */
+  Context.prototype.refresh = function() {
+    /*eslint-disable eqeqeq */
+    var isWindow = this.element == this.element.window
+    /*eslint-enable eqeqeq */
+    var contextOffset = isWindow ? undefined : this.adapter.offset()
+    var triggeredGroups = {}
+    var axes
+
+    this.handleScroll()
+    axes = {
+      horizontal: {
+        contextOffset: isWindow ? 0 : contextOffset.left,
+        contextScroll: isWindow ? 0 : this.oldScroll.x,
+        contextDimension: this.innerWidth(),
+        oldScroll: this.oldScroll.x,
+        forward: 'right',
+        backward: 'left',
+        offsetProp: 'left'
+      },
+      vertical: {
+        contextOffset: isWindow ? 0 : contextOffset.top,
+        contextScroll: isWindow ? 0 : this.oldScroll.y,
+        contextDimension: this.innerHeight(),
+        oldScroll: this.oldScroll.y,
+        forward: 'down',
+        backward: 'up',
+        offsetProp: 'top'
+      }
+    }
+
+    for (var axisKey in axes) {
+      var axis = axes[axisKey]
+      for (var waypointKey in this.waypoints[axisKey]) {
+        var waypoint = this.waypoints[axisKey][waypointKey]
+        var adjustment = waypoint.options.offset
+        var oldTriggerPoint = waypoint.triggerPoint
+        var elementOffset = 0
+        var freshWaypoint = oldTriggerPoint == null
+        var contextModifier, wasBeforeScroll, nowAfterScroll
+        var triggeredBackward, triggeredForward
+
+        if (waypoint.element !== waypoint.element.window) {
+          elementOffset = waypoint.adapter.offset()[axis.offsetProp]
+        }
+
+        if (typeof adjustment === 'function') {
+          adjustment = adjustment.apply(waypoint)
+        }
+        else if (typeof adjustment === 'string') {
+          adjustment = parseFloat(adjustment)
+          if (waypoint.options.offset.indexOf('%') > - 1) {
+            adjustment = Math.ceil(axis.contextDimension * adjustment / 100)
           }
-        });
-        $element.bind(resizeEvent, function() {
-          var resizeHandler;
+        }
 
-          if (!_this.didResize) {
-            _this.didResize = true;
-            resizeHandler = function() {
-              $[wps]('refresh');
-              return _this.didResize = false;
-            };
-            return window.setTimeout(resizeHandler, $[wps].settings.resizeThrottle);
-          }
-        });
+        contextModifier = axis.contextScroll - axis.contextOffset
+        waypoint.triggerPoint = Math.floor(elementOffset + contextModifier - adjustment)
+        wasBeforeScroll = oldTriggerPoint < axis.oldScroll
+        nowAfterScroll = waypoint.triggerPoint >= axis.oldScroll
+        triggeredBackward = wasBeforeScroll && nowAfterScroll
+        triggeredForward = !wasBeforeScroll && !nowAfterScroll
+
+        if (!freshWaypoint && triggeredBackward) {
+          waypoint.queueTrigger(axis.backward)
+          triggeredGroups[waypoint.group.id] = waypoint.group
+        }
+        else if (!freshWaypoint && triggeredForward) {
+          waypoint.queueTrigger(axis.forward)
+          triggeredGroups[waypoint.group.id] = waypoint.group
+        }
+        else if (freshWaypoint && axis.oldScroll >= waypoint.triggerPoint) {
+          waypoint.queueTrigger(axis.forward)
+          triggeredGroups[waypoint.group.id] = waypoint.group
+        }
+      }
+    }
+
+    Waypoint.requestAnimationFrame(function() {
+      for (var groupKey in triggeredGroups) {
+        triggeredGroups[groupKey].flushTriggers()
+      }
+    })
+
+    return this
+  }
+
+  /* Private */
+  Context.findOrCreateByElement = function(element) {
+    return Context.findByElement(element) || new Context(element)
+  }
+
+  /* Private */
+  Context.refreshAll = function() {
+    for (var contextId in contexts) {
+      contexts[contextId].refresh()
+    }
+  }
+
+  /* Public */
+  /* http://imakewebthings.com/waypoints/api/context-find-by-element */
+  Context.findByElement = function(element) {
+    return contexts[element.waypointContextKey]
+  }
+
+  window.onload = function() {
+    if (oldWindowLoad) {
+      oldWindowLoad()
+    }
+    Context.refreshAll()
+  }
+
+
+  Waypoint.requestAnimationFrame = function(callback) {
+    var requestFn = window.requestAnimationFrame ||
+      window.mozRequestAnimationFrame ||
+      window.webkitRequestAnimationFrame ||
+      requestAnimationFrameShim
+    requestFn.call(window, callback)
+  }
+  Waypoint.Context = Context
+}())
+;(function() {
+  'use strict'
+
+  function byTriggerPoint(a, b) {
+    return a.triggerPoint - b.triggerPoint
+  }
+
+  function byReverseTriggerPoint(a, b) {
+    return b.triggerPoint - a.triggerPoint
+  }
+
+  var groups = {
+    vertical: {},
+    horizontal: {}
+  }
+  var Waypoint = window.Waypoint
+
+  /* http://imakewebthings.com/waypoints/api/group */
+  function Group(options) {
+    this.name = options.name
+    this.axis = options.axis
+    this.id = this.name + '-' + this.axis
+    this.waypoints = []
+    this.clearTriggerQueues()
+    groups[this.axis][this.name] = this
+  }
+
+  /* Private */
+  Group.prototype.add = function(waypoint) {
+    this.waypoints.push(waypoint)
+  }
+
+  /* Private */
+  Group.prototype.clearTriggerQueues = function() {
+    this.triggerQueues = {
+      up: [],
+      down: [],
+      left: [],
+      right: []
+    }
+  }
+
+  /* Private */
+  Group.prototype.flushTriggers = function() {
+    for (var direction in this.triggerQueues) {
+      var waypoints = this.triggerQueues[direction]
+      var reverse = direction === 'up' || direction === 'left'
+      waypoints.sort(reverse ? byReverseTriggerPoint : byTriggerPoint)
+      for (var i = 0, end = waypoints.length; i < end; i += 1) {
+        var waypoint = waypoints[i]
+        if (waypoint.options.continuous || i === waypoints.length - 1) {
+          waypoint.trigger([direction])
+        }
+      }
+    }
+    this.clearTriggerQueues()
+  }
+
+  /* Private */
+  Group.prototype.next = function(waypoint) {
+    this.waypoints.sort(byTriggerPoint)
+    var index = Waypoint.Adapter.inArray(waypoint, this.waypoints)
+    var isLast = index === this.waypoints.length - 1
+    return isLast ? null : this.waypoints[index + 1]
+  }
+
+  /* Private */
+  Group.prototype.previous = function(waypoint) {
+    this.waypoints.sort(byTriggerPoint)
+    var index = Waypoint.Adapter.inArray(waypoint, this.waypoints)
+    return index ? this.waypoints[index - 1] : null
+  }
+
+  /* Private */
+  Group.prototype.queueTrigger = function(waypoint, direction) {
+    this.triggerQueues[direction].push(waypoint)
+  }
+
+  /* Private */
+  Group.prototype.remove = function(waypoint) {
+    var index = Waypoint.Adapter.inArray(waypoint, this.waypoints)
+    if (index > -1) {
+      this.waypoints.splice(index, 1)
+    }
+  }
+
+  /* Public */
+  /* http://imakewebthings.com/waypoints/api/first */
+  Group.prototype.first = function() {
+    return this.waypoints[0]
+  }
+
+  /* Public */
+  /* http://imakewebthings.com/waypoints/api/last */
+  Group.prototype.last = function() {
+    return this.waypoints[this.waypoints.length - 1]
+  }
+
+  /* Private */
+  Group.findOrCreate = function(options) {
+    return groups[options.axis][options.name] || new Group(options)
+  }
+
+  Waypoint.Group = Group
+}())
+;(function() {
+  'use strict'
+
+  var $ = window.jQuery
+  var Waypoint = window.Waypoint
+
+  function JQueryAdapter(element) {
+    this.$element = $(element)
+  }
+
+  $.each([
+    'innerHeight',
+    'innerWidth',
+    'off',
+    'offset',
+    'on',
+    'outerHeight',
+    'outerWidth',
+    'scrollLeft',
+    'scrollTop'
+  ], function(i, method) {
+    JQueryAdapter.prototype[method] = function() {
+      var args = Array.prototype.slice.call(arguments)
+      return this.$element[method].apply(this.$element, args)
+    }
+  })
+
+  $.each([
+    'extend',
+    'inArray',
+    'isEmptyObject'
+  ], function(i, method) {
+    JQueryAdapter[method] = $[method]
+  })
+
+  Waypoint.adapters.push({
+    name: 'jquery',
+    Adapter: JQueryAdapter
+  })
+  Waypoint.Adapter = JQueryAdapter
+}())
+;(function() {
+  'use strict'
+
+  var Waypoint = window.Waypoint
+
+  function createExtension(framework) {
+    return function() {
+      var waypoints = []
+      var overrides = arguments[0]
+
+      if (framework.isFunction(arguments[0])) {
+        overrides = framework.extend({}, arguments[1])
+        overrides.handler = arguments[0]
       }
 
-      Context.prototype.doScroll = function() {
-        var axes,
-          _this = this;
-
-        axes = {
-          horizontal: {
-            newScroll: this.$element.scrollLeft(),
-            oldScroll: this.oldScroll.x,
-            forward: 'right',
-            backward: 'left'
-          },
-          vertical: {
-            newScroll: this.$element.scrollTop(),
-            oldScroll: this.oldScroll.y,
-            forward: 'down',
-            backward: 'up'
-          }
-        };
-        if (isTouch && (!axes.vertical.oldScroll || !axes.vertical.newScroll)) {
-          $[wps]('refresh');
+      this.each(function() {
+        var options = framework.extend({}, overrides, {
+          element: this
+        })
+        if (typeof options.context === 'string') {
+          options.context = framework(this).closest(options.context)[0]
         }
-        $.each(axes, function(aKey, axis) {
-          var direction, isForward, triggered;
+        waypoints.push(new Waypoint(options))
+      })
 
-          triggered = [];
-          isForward = axis.newScroll > axis.oldScroll;
-          direction = isForward ? axis.forward : axis.backward;
-          $.each(_this.waypoints[aKey], function(wKey, waypoint) {
-            var _ref, _ref1;
+      return waypoints
+    }
+  }
 
-            if ((axis.oldScroll < (_ref = waypoint.offset) && _ref <= axis.newScroll)) {
-              return triggered.push(waypoint);
-            } else if ((axis.newScroll < (_ref1 = waypoint.offset) && _ref1 <= axis.oldScroll)) {
-              return triggered.push(waypoint);
-            }
-          });
-          triggered.sort(function(a, b) {
-            return a.offset - b.offset;
-          });
-          if (!isForward) {
-            triggered.reverse();
-          }
-          return $.each(triggered, function(i, waypoint) {
-            if (waypoint.options.continuous || i === triggered.length - 1) {
-              return waypoint.trigger([direction]);
-            }
-          });
-        });
-        return this.oldScroll = {
-          x: axes.horizontal.newScroll,
-          y: axes.vertical.newScroll
-        };
-      };
-
-      Context.prototype.refresh = function() {
-        var axes, cOffset, isWin,
-          _this = this;
-
-        isWin = $.isWindow(this.element);
-        cOffset = this.$element.offset();
-        this.doScroll();
-        axes = {
-          horizontal: {
-            contextOffset: isWin ? 0 : cOffset.left,
-            contextScroll: isWin ? 0 : this.oldScroll.x,
-            contextDimension: this.$element.width(),
-            oldScroll: this.oldScroll.x,
-            forward: 'right',
-            backward: 'left',
-            offsetProp: 'left'
-          },
-          vertical: {
-            contextOffset: isWin ? 0 : cOffset.top,
-            contextScroll: isWin ? 0 : this.oldScroll.y,
-            contextDimension: isWin ? $[wps]('viewportHeight') : this.$element.height(),
-            oldScroll: this.oldScroll.y,
-            forward: 'down',
-            backward: 'up',
-            offsetProp: 'top'
-          }
-        };
-        return $.each(axes, function(aKey, axis) {
-          return $.each(_this.waypoints[aKey], function(i, waypoint) {
-            var adjustment, elementOffset, oldOffset, _ref, _ref1;
-
-            adjustment = waypoint.options.offset;
-            oldOffset = waypoint.offset;
-            elementOffset = $.isWindow(waypoint.element) ? 0 : waypoint.$element.offset()[axis.offsetProp];
-            if ($.isFunction(adjustment)) {
-              adjustment = adjustment.apply(waypoint.element);
-            } else if (typeof adjustment === 'string') {
-              adjustment = parseFloat(adjustment);
-              if (waypoint.options.offset.indexOf('%') > -1) {
-                adjustment = Math.ceil(axis.contextDimension * adjustment / 100);
-              }
-            }
-            waypoint.offset = elementOffset - axis.contextOffset + axis.contextScroll - adjustment;
-            if ((waypoint.options.onlyOnScroll && (oldOffset != null)) || !waypoint.enabled) {
-              return;
-            }
-            if (oldOffset !== null && (oldOffset < (_ref = axis.oldScroll) && _ref <= waypoint.offset)) {
-              return waypoint.trigger([axis.backward]);
-            } else if (oldOffset !== null && (oldOffset > (_ref1 = axis.oldScroll) && _ref1 >= waypoint.offset)) {
-              return waypoint.trigger([axis.forward]);
-            } else if (oldOffset === null && axis.oldScroll >= waypoint.offset) {
-              return waypoint.trigger([axis.forward]);
-            }
-          });
-        });
-      };
-
-      Context.prototype.checkEmpty = function() {
-        if ($.isEmptyObject(this.waypoints.horizontal) && $.isEmptyObject(this.waypoints.vertical)) {
-          this.$element.unbind([resizeEvent, scrollEvent].join(' '));
-          return delete contexts[this.id];
-        }
-      };
-
-      return Context;
-
-    })();
-    Waypoint = (function() {
-      function Waypoint($element, context, options) {
-        var idList, _ref;
-
-        options = $.extend({}, $.fn[wp].defaults, options);
-        if (options.offset === 'bottom-in-view') {
-          options.offset = function() {
-            var contextHeight;
-
-            contextHeight = $[wps]('viewportHeight');
-            if (!$.isWindow(context.element)) {
-              contextHeight = context.$element.height();
-            }
-            return contextHeight - $(this).outerHeight();
-          };
-        }
-        this.$element = $element;
-        this.element = $element[0];
-        this.axis = options.horizontal ? 'horizontal' : 'vertical';
-        this.callback = options.handler;
-        this.context = context;
-        this.enabled = options.enabled;
-        this.id = 'waypoints' + waypointCounter++;
-        this.offset = null;
-        this.options = options;
-        context.waypoints[this.axis][this.id] = this;
-        allWaypoints[this.axis][this.id] = this;
-        idList = (_ref = $element.data(waypointKey)) != null ? _ref : [];
-        idList.push(this.id);
-        $element.data(waypointKey, idList);
-      }
-
-      Waypoint.prototype.trigger = function(args) {
-        if (!this.enabled) {
-          return;
-        }
-        if (this.callback != null) {
-          this.callback.apply(this.element, args);
-        }
-        if (this.options.triggerOnce) {
-          return this.destroy();
-        }
-      };
-
-      Waypoint.prototype.disable = function() {
-        return this.enabled = false;
-      };
-
-      Waypoint.prototype.enable = function() {
-        this.context.refresh();
-        return this.enabled = true;
-      };
-
-      Waypoint.prototype.destroy = function() {
-        delete allWaypoints[this.axis][this.id];
-        delete this.context.waypoints[this.axis][this.id];
-        return this.context.checkEmpty();
-      };
-
-      Waypoint.getWaypointsByElement = function(element) {
-        var all, ids;
-
-        ids = $(element).data(waypointKey);
-        if (!ids) {
-          return [];
-        }
-        all = $.extend({}, allWaypoints.horizontal, allWaypoints.vertical);
-        return $.map(ids, function(id) {
-          return all[id];
-        });
-      };
-
-      return Waypoint;
-
-    })();
-    methods = {
-      init: function(f, options) {
-        var _ref;
-
-        if (options == null) {
-          options = {};
-        }
-        if ((_ref = options.handler) == null) {
-          options.handler = f;
-        }
-        this.each(function() {
-          var $this, context, contextElement, _ref1;
-
-          $this = $(this);
-          contextElement = (_ref1 = options.context) != null ? _ref1 : $.fn[wp].defaults.context;
-          if (!$.isWindow(contextElement)) {
-            contextElement = $this.closest(contextElement);
-          }
-          contextElement = $(contextElement);
-          context = contexts[contextElement.data(contextKey)];
-          if (!context) {
-            context = new Context(contextElement);
-          }
-          return new Waypoint($this, context, options);
-        });
-        $[wps]('refresh');
-        return this;
-      },
-      disable: function() {
-        return methods._invoke(this, 'disable');
-      },
-      enable: function() {
-        return methods._invoke(this, 'enable');
-      },
-      destroy: function() {
-        return methods._invoke(this, 'destroy');
-      },
-      prev: function(axis, selector) {
-        return methods._traverse.call(this, axis, selector, function(stack, index, waypoints) {
-          if (index > 0) {
-            return stack.push(waypoints[index - 1]);
-          }
-        });
-      },
-      next: function(axis, selector) {
-        return methods._traverse.call(this, axis, selector, function(stack, index, waypoints) {
-          if (index < waypoints.length - 1) {
-            return stack.push(waypoints[index + 1]);
-          }
-        });
-      },
-      _traverse: function(axis, selector, push) {
-        var stack, waypoints;
-
-        if (axis == null) {
-          axis = 'vertical';
-        }
-        if (selector == null) {
-          selector = window;
-        }
-        waypoints = jQMethods.aggregate(selector);
-        stack = [];
-        this.each(function() {
-          var index;
-
-          index = $.inArray(this, waypoints[axis]);
-          return push(stack, index, waypoints[axis]);
-        });
-        return this.pushStack(stack);
-      },
-      _invoke: function($elements, method) {
-        $elements.each(function() {
-          var waypoints;
-
-          waypoints = Waypoint.getWaypointsByElement(this);
-          return $.each(waypoints, function(i, waypoint) {
-            waypoint[method]();
-            return true;
-          });
-        });
-        return this;
-      }
-    };
-    $.fn[wp] = function() {
-      var args, method;
-
-      method = arguments[0], args = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
-      if (methods[method]) {
-        return methods[method].apply(this, args);
-      } else if ($.isFunction(method)) {
-        return methods.init.apply(this, arguments);
-      } else if ($.isPlainObject(method)) {
-        return methods.init.apply(this, [null, method]);
-      } else if (!method) {
-        return $.error("jQuery Waypoints needs a callback function or handler option.");
-      } else {
-        return $.error("The " + method + " method does not exist in jQuery Waypoints.");
-      }
-    };
-    $.fn[wp].defaults = {
-      context: window,
-      continuous: true,
-      enabled: true,
-      horizontal: false,
-      offset: 0,
-      triggerOnce: false
-    };
-    jQMethods = {
-      refresh: function() {
-        return $.each(contexts, function(i, context) {
-          return context.refresh();
-        });
-      },
-      viewportHeight: function() {
-        var _ref;
-
-        return (_ref = window.innerHeight) != null ? _ref : $w.height();
-      },
-      aggregate: function(contextSelector) {
-        var collection, waypoints, _ref;
-
-        collection = allWaypoints;
-        if (contextSelector) {
-          collection = (_ref = contexts[$(contextSelector).data(contextKey)]) != null ? _ref.waypoints : void 0;
-        }
-        if (!collection) {
-          return [];
-        }
-        waypoints = {
-          horizontal: [],
-          vertical: []
-        };
-        $.each(waypoints, function(axis, arr) {
-          $.each(collection[axis], function(key, waypoint) {
-            return arr.push(waypoint);
-          });
-          arr.sort(function(a, b) {
-            return a.offset - b.offset;
-          });
-          waypoints[axis] = $.map(arr, function(waypoint) {
-            return waypoint.element;
-          });
-          return waypoints[axis] = $.unique(waypoints[axis]);
-        });
-        return waypoints;
-      },
-      above: function(contextSelector) {
-        if (contextSelector == null) {
-          contextSelector = window;
-        }
-        return jQMethods._filter(contextSelector, 'vertical', function(context, waypoint) {
-          return waypoint.offset <= context.oldScroll.y;
-        });
-      },
-      below: function(contextSelector) {
-        if (contextSelector == null) {
-          contextSelector = window;
-        }
-        return jQMethods._filter(contextSelector, 'vertical', function(context, waypoint) {
-          return waypoint.offset > context.oldScroll.y;
-        });
-      },
-      left: function(contextSelector) {
-        if (contextSelector == null) {
-          contextSelector = window;
-        }
-        return jQMethods._filter(contextSelector, 'horizontal', function(context, waypoint) {
-          return waypoint.offset <= context.oldScroll.x;
-        });
-      },
-      right: function(contextSelector) {
-        if (contextSelector == null) {
-          contextSelector = window;
-        }
-        return jQMethods._filter(contextSelector, 'horizontal', function(context, waypoint) {
-          return waypoint.offset > context.oldScroll.x;
-        });
-      },
-      enable: function() {
-        return jQMethods._invoke('enable');
-      },
-      disable: function() {
-        return jQMethods._invoke('disable');
-      },
-      destroy: function() {
-        return jQMethods._invoke('destroy');
-      },
-      extendFn: function(methodName, f) {
-        return methods[methodName] = f;
-      },
-      _invoke: function(method) {
-        var waypoints;
-
-        waypoints = $.extend({}, allWaypoints.vertical, allWaypoints.horizontal);
-        return $.each(waypoints, function(key, waypoint) {
-          waypoint[method]();
-          return true;
-        });
-      },
-      _filter: function(selector, axis, test) {
-        var context, waypoints;
-
-        context = contexts[$(selector).data(contextKey)];
-        if (!context) {
-          return [];
-        }
-        waypoints = [];
-        $.each(context.waypoints[axis], function(i, waypoint) {
-          if (test(context, waypoint)) {
-            return waypoints.push(waypoint);
-          }
-        });
-        waypoints.sort(function(a, b) {
-          return a.offset - b.offset;
-        });
-        return $.map(waypoints, function(waypoint) {
-          return waypoint.element;
-        });
-      }
-    };
-    $[wps] = function() {
-      var args, method;
-
-      method = arguments[0], args = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
-      if (jQMethods[method]) {
-        return jQMethods[method].apply(null, args);
-      } else {
-        return jQMethods.aggregate.call(null, method);
-      }
-    };
-    $[wps].settings = {
-      resizeThrottle: 100,
-      scrollThrottle: 30
-    };
-    return $w.load(function() {
-      return $[wps]('refresh');
-    });
-  });
-
-}).call(this);
+  if (window.jQuery) {
+    window.jQuery.fn.waypoint = createExtension(window.jQuery)
+  }
+  if (window.Zepto) {
+    window.Zepto.fn.waypoint = createExtension(window.Zepto)
+  }
+}())
+;
 if (!window["WPAC"]) var WPAC = {};
 WPAC._Options = WPAC._Options || {}; 
 
@@ -1796,7 +2093,7 @@ WPAC._ExtractTitle = function(html) {
 
 WPAC._ShowMessage = function (message, type) {
 
-	var top = WPAC._Options.popupMarginTop + jQuery("#wpadminbar").outerHeight();
+	var top = WPAC._Options.popupMarginTop + (jQuery("#wpadminbar").outerHeight() || 0);
 
 	var backgroundColor = WPAC._Options.popupBackgroundColorLoading;
 	var textColor = WPAC._Options.popupTextColorLoading;
@@ -1929,7 +2226,7 @@ WPAC._UpdateUrl= function(url) {
 	}
 }
 
-WPAC._ReplaceComments = function(data, commentUrl, useFallbackUrl, formData, selectorCommentsContainer, selectorCommentForm, selectorRespondContainer, beforeSelectElements, beforeUpdateComments, afterUpdateComments) {
+WPAC._ReplaceComments = function(data, commentUrl, useFallbackUrl, formData, formFocus, selectorCommentsContainer, selectorCommentForm, selectorRespondContainer, beforeSelectElements, beforeUpdateComments, afterUpdateComments) {
 	
 	var fallbackUrl = useFallbackUrl ? WPAC._AddQueryParamStringToUrl(commentUrl, "WPACFallback", "1") : commentUrl;
 	
@@ -2016,6 +2313,11 @@ WPAC._ReplaceComments = function(data, commentUrl, useFallbackUrl, formData, sel
 				if (formElement.length != 1 || formElement.val()) return;
 				formElement.val(value.value);
 			});
+		}
+		if (formFocus) {
+			// Reset focus
+			var formElement = jQuery("[name='"+formFocus+"']", selectorCommentForm);
+			if (formElement) formElement.focus();
 		}
 
 	}
@@ -2199,7 +2501,7 @@ WPAC.AttachForm = function(options) {
 				WPAC._ShowMessage(unapproved == '1' ? WPAC._Options.textPostedUnapproved : WPAC._Options.textPosted, "success");
 
 				// Replace comments (and return if replacing failed)
-				if (!WPAC._ReplaceComments(data, commentUrl, false, {}, options.selectorCommentsContainer, options.selectorCommentForm, options.selectorRespondContainer, 
+				if (!WPAC._ReplaceComments(data, commentUrl, false, {}, "", options.selectorCommentsContainer, options.selectorCommentForm, options.selectorRespondContainer, 
 					options.beforeSelectElements, options.beforeUpdateComments, options.afterUpdateComments)) return;
 				
 				// Smooth scroll to comment url and update browser url
@@ -2303,7 +2605,7 @@ WPAC.Init = function() {
 }
 
 WPAC._OnIdle = function() {
-	WPAC.RefreshComments({ success: WPAC._InitIdleTimer, scrollToAnchor: false	});
+	WPAC.RefreshComments({ success: WPAC._InitIdleTimer, scrollToAnchor: false});
 };
 
 WPAC._InitIdleTimer = function() {
@@ -2336,7 +2638,7 @@ WPAC.LoadComments = function(url, options) {
 		return false;
 	}
 
-	// Convert boolean parameter (used in version <0.14.0
+	// Convert boolean parameter (used in version <0.14.0)
 	if (typeof(options) == "boolean")
 		options = {scrollToAnchor: options}
 
@@ -2355,8 +2657,9 @@ WPAC.LoadComments = function(url, options) {
 		afterUpdateComments: WPAC._Callbacks.afterUpdateComments,
 	}, options || {});	
 	
-	// Save form data
+	// Save form data and focus
 	var formData = jQuery(options.selectorCommentForm).serializeArray();
+	var formFocus = (document.activeElement) ? jQuery("[name='"+document.activeElement.name+"']", options.selectorCommentForm).attr("name") : "";
 	
 	// Show loading info
 	if (options.showLoadingInfo)
@@ -2372,7 +2675,7 @@ WPAC.LoadComments = function(url, options) {
 		success: function (data) {
 
 			// Replace comments (and return if replacing failed)
-			if (!WPAC._ReplaceComments(data, url, true, formData, options.selectorCommentsContainer, options.selectorCommentForm, 
+			if (!WPAC._ReplaceComments(data, url, true, formData, formFocus, options.selectorCommentsContainer, options.selectorCommentForm, 
 				options.selectorRespondContainer, options.beforeSelectElements, options.beforeUpdateComments, options.afterUpdateComments)) return;
 			
 			if (options.updateUrl) WPAC._UpdateUrl(url);
@@ -2423,8 +2726,8 @@ jQuery(function() {
 		}
 		
 		if (asyncLoadTrigger == "Viewport") {
-			jQuery(WPAC._Options.selectorCommentsContainer).waypoint(function() {
-				jQuery(WPAC._Options.selectorCommentsContainer).waypoint("destroy");
+			jQuery(WPAC._Options.selectorCommentsContainer).waypoint(function(direction) {
+				this.destroy();
 				WPAC.RefreshComments();
 			}, { offset: "100%" });
 		} else if (asyncLoadTrigger == "DomReady") {

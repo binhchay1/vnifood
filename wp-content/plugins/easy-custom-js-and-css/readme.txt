@@ -3,8 +3,8 @@ Contributors: Avirtum
 Donate link: https://www.paypal.me/avirtum/5
 Tags: custom css, custom js, development, custom codes, LESS & SCSS preprocessors
 Requires at least: 4.0
-Tested up to: 5.0.3
-Stable tag: 1.1.1
+Tested up to: 5.6.1
+Stable tag: 1.1.2
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -79,11 +79,14 @@ No, the code is printed exactly as in the code editor. It is not modified in any
 
 == Changelog ==
 
+= 1.1.2 =
+ * New: support Emoji
+
 = 1.1.1 =
- * New: Added search box (Ctrl + F)
+ * New: search box (Ctrl + F)
 
 = 1.1.0 =
- * New: Delete all data
+ * New: delete all data
 
 = 1.0.0 =
  * Initial release

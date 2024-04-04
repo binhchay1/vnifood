@@ -1,3 +1,7 @@
+ul.flickr{
+    list-style-type: none;
+    padding: 0;
+}
 ul.flickr li, 
 .widget ul.flickr li {
 	width: auto;

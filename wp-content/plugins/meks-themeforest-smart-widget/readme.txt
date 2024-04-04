@@ -3,8 +3,8 @@ Contributors: mekshq
 Donate link: https://mekshq.com/
 Tags: themeforest, envato, marketplace, widget, affiliate, advertising, ad, ads, sidebar
 Requires at least: 3.0
-Tested up to: 5.2
-Stable tag: 1.3
+Tested up to: 6.3
+Stable tag: 1.5
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl.html
 
@@ -54,6 +54,13 @@ For any questions, issues and suggestions please visit https://mekshq.com/contac
 2. Widget in action
 
 == Changelog ==
+
+= 1.5 =
+* WP 6.3 compatibility tested
+* Patched a minor security issue
+
+= 1.4 =
+* Notification for meks plugins
 
 = 1.3 =
 * Added: Option to provide Envato API Token in order to use the latest Envato API version
