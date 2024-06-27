@@ -6,6 +6,7 @@
         exit;
     }
 
+
     if ( ! class_exists( 'Redux_Filesystem' ) ) {
         class Redux_Filesystem {
 
