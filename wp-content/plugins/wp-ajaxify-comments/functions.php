@@ -56,12 +56,20 @@ function wpac_enqueue_scripts() {
 		return;
 	}
 
-	$version       = Functions::get_plugin_version();
-	$options       = Options::get_options();
-	$in_footer     = (bool) $options['placeScriptsInFooter'] || (bool) $options['debug'] || ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG );
-	$is_debug      = (bool) $options['debug'];
-	$is_singular   = is_singular() || is_page();
-	$force_scripts = false;
+	$version                 = Functions::get_plugin_version();
+	$options                 = Options::get_options();
+	$in_footer               = (bool) $options['placeScriptsInFooter'] || (bool) $options['debug'] || ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG );
+	$is_debug                = (bool) $options['debug'];
+	$force_scripts           = false;
+	$is_lazy_loading_enabled = Functions::is_lazy_loading_enabled( true, false );
+	$is_comments_enabled     = wpac_comments_enabled();
+
+	// Determine if comments are present on the page.
+	$has_comments = false;
+	if ( is_page() || is_single() || is_a( get_queried_object(), 'WP_POST' ) ) {
+		global $post;
+		$has_comments = get_comments_number( $post->ID ) > 0;
+	}
 
 	/**
 	 * Filter: Load scripts on all pages.
@@ -72,7 +80,7 @@ function wpac_enqueue_scripts() {
 	 */
 	$force_scripts = apply_filters( 'dlxplugins/ajaxify/scripts/load', $force_scripts );
 
-	if ( ( $is_debug || $is_singular || $force_scripts ) && (bool) $options['useUncompressedScripts'] ) {
+	if ( ( $is_debug || $is_comments_enabled || $force_scripts || ( $is_lazy_loading_enabled && $has_comments ) ) && (bool) $options['useUncompressedScripts'] ) {
 		wp_enqueue_script(
 			'jsuri',
 			Functions::get_plugin_url( 'dist/wpac-frontend-jsuri.js' ),
@@ -114,12 +122,13 @@ function wpac_enqueue_scripts() {
 			$version,
 			$in_footer
 		);
-	} elseif ( $is_debug || $is_singular || $force_scripts ) {
+	} elseif ( $is_debug || $is_comments_enabled || $force_scripts || ( $is_lazy_loading_enabled && $has_comments ) ) {
+		$deps = require Functions::get_plugin_dir( 'dist/wpac-frontend-js.asset.php' );
 		wp_enqueue_script(
 			'wpAjaxifyComments',
 			Functions::get_plugin_url( 'dist/wpac-frontend-js.js' ),
-			array( 'jquery' ),
-			$version,
+			$deps['dependencies'],
+			$deps['version'],
 			$in_footer
 		);
 	}
@@ -136,6 +145,29 @@ function wpac_enqueue_scripts() {
 			'afterPostComment'     => wpac_get_option( 'callbackOnAfterPostComment' ),
 		)
 	);
+	if ( $is_debug || $is_comments_enabled || $force_scripts || ( $is_lazy_loading_enabled && $has_comments ) ) {
+		/**
+		 * Add frontend CSS.
+		 */
+		wp_enqueue_style(
+			'wpac-frontend',
+			Functions::get_plugin_url( 'dist/wpac-frontend-css.css' ),
+			array(),
+			Functions::get_plugin_version(),
+			'all'
+		);
+	}
+
+	// Load lazy loading styles.
+	if ( $is_lazy_loading_enabled && ( $has_comments || $is_comments_enabled ) ) {
+		wp_enqueue_style(
+			'wpac-admin-lazy-load',
+			Functions::get_plugin_url( 'dist/wpac-lazy-load-css.css' ),
+			array(),
+			Functions::get_plugin_version(),
+			'all'
+		);
+	}
 
 	/**
 	 * Sunshine Confetti Plugin integration.
@@ -149,10 +181,63 @@ function wpac_enqueue_scripts() {
 		$wp_sunshine->enqueue_scripts( false );
 	}
 
+	add_action( 'wp_print_styles', 'wpac_print_styles' );
+
 	/**
 	 * Do action after scripts are enqueued.
 	 */
 	do_action( 'dlxplugins/ajaxify/comments/enqueue_scripts', $version, $in_footer );
+}
+
+/**
+ * Print inline styles for the frontend.
+ */
+function wpac_print_styles() {
+	?>
+	<style>
+		:root {
+			--wpac-popup-opacity: <?php echo esc_html( round( wpac_get_option( 'popupOpacity' ) / 100, 2 ) ); ?>;
+			--wpac-popup-corner-radius: <?php echo esc_html( wpac_get_option( 'popupCornerRadius' ) ); ?>px;
+			--wpac-popup-margin-top: <?php echo esc_html( wpac_get_option( 'popupMarginTop' ) ); ?>px;
+			--wpac-popup-width: <?php echo esc_html( wpac_get_option( 'popupWidth' ) ); ?>%;
+			--wpac-popup-padding: <?php echo esc_html( wpac_get_option( 'popupPadding' ) ); ?>px;
+			--wpac-popup-font-size: <?php echo esc_html( wpac_get_option( 'popupTextFontSize' ) ); ?>;
+			--wpac-popup-line-height: 1.2;
+		}
+		/* tablet styles */
+		@media screen and (max-width: 1024px) {
+			.wpac-overlay {
+				--wpac-popup-opacity: <?php echo esc_html( round( wpac_get_option( 'popupOpacityTablet' ) / 100, 2 ) ); ?>;
+				--wpac-popup-corner-radius: <?php echo esc_html( wpac_get_option( 'popupCornerRadiusTablet' ) ); ?>px;
+				--wpac-popup-margin-top: <?php echo esc_html( wpac_get_option( 'popupMarginTopTablet' ) ); ?>px;
+				--wpac-popup-width: <?php echo esc_html( wpac_get_option( 'popupWidthTablet' ) ); ?>%;
+				--wpac-popup-padding: <?php echo esc_html( wpac_get_option( 'popupPaddingTablet' ) ); ?>px;
+				--wpac-popup-font-size: <?php echo esc_html( wpac_get_option( 'popupTextFontSizeTablet' ) ); ?>;
+			}
+		}
+		/* mobile styles */
+		@media screen and (max-width: 768px) {
+			.wpac-overlay {
+				--wpac-popup-opacity: <?php echo esc_html( round( wpac_get_option( 'popupOpacityMobile' ) / 100, 2 ) ); ?>;
+				--wpac-popup-corner-radius: <?php echo esc_html( wpac_get_option( 'popupCornerRadiusMobile' ) ); ?>px;
+				--wpac-popup-margin-top: <?php echo esc_html( wpac_get_option( 'popupMarginTopMobile' ) ); ?>px;
+				--wpac-popup-width: <?php echo esc_html( wpac_get_option( 'popupWidthMobile' ) ); ?>%;
+				--wpac-popup-padding: <?php echo esc_html( wpac_get_option( 'popupPaddingMobile' ) ); ?>px;
+				--wpac-popup-font-size: <?php echo esc_html( wpac_get_option( 'popupTextFontSizeMobile' ) ); ?>;
+			}
+		}
+		.wpac-overlay {
+			display: none;
+			opacity: var(--wpac-popup-opacity);
+			border-radius: var(--wpac-popup-corner-radius);
+			margin-top: var(--wpac-popup-margin-top);
+			padding: var(--wpac-popup-padding) !important;
+			font-size: var(--wpac-popup-font-size) !important;
+			line-height: var(--wpac-popup-line-height);
+			margin: 0 auto;
+		}
+	</style>
+	<?php
 }
 
 function wpac_get_version() {

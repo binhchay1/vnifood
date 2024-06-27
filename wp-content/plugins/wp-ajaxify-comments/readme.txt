@@ -1,15 +1,15 @@
-﻿=== Ajaxify Comments - Lazy Load and No Reload Comments ===
+﻿=== Ajaxify Comments - Ajax and Lazy Loading Comments ===
 Contributors: ronalfy
 Tags: AJAX, comments, lazy load, errors, refresh
 Requires at least: 5.0
-Tested up to: 6.4
-Stable tag: 2.1.1
+Tested up to: 6.6
+Stable tag: 3.0.2
 Requires PHP: 7.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Donate link: https://github.com/sponsors/DLXPlugins
 
-Ajaxify Comments hooks into WordPress comments and allows comment posting without reloading the page. It supports lazy loading, and allows comments to load in the background. This can help speed up your page load time.
+Ajaxify Comments hooks into native WordPress comments and allows comment posting without reloading the page.
 
 == Description ==
 
@@ -17,7 +17,7 @@ Skip page reloads and separate error screens when posting comments. Ajaxify Comm
 
 === TLDR ===
 
-<a href="https://docs.dlxplugins.com/v/ajaxify-comments/first-time-users/getting-started">Getting Started</a> | <a href="https://github.com/sponsors/DLXPlugins">Sponsor Us</a> | <a href="https://app.instawp.io/launch?t=ajaxify-comments&d=v2">Launch an Instant Demo</a> | <a href="https://dlxplugins.com/plugins/ajaxify-comments">Ajaxify Home</a>
+<a href="https://docs.dlxplugins.com/v/ajaxify-comments/first-time-users/getting-started">Getting Started</a> | <a href="https://github.com/sponsors/DLXPlugins">Sponsor Us</a> | <a href="https://dlxplugins.com/plugins/ajaxify-comments">Ajaxify Home</a>
 
 Ajaxify Comments hooks into your theme and improves the usability of the comment form by validating and adding comments without the need of page reloads. Users can remain on the page and interact with new comments as they're posted. This plugin also supports lazy loading of comments, which can help speed up your page load time.
 
@@ -34,7 +34,7 @@ Moreover this plugin includes an option to automatically refresh the comments on
 
 === Quick Resource Links ===
 
-Here are some helpful links to help you get started with Ajaxify Comments:
+Here are some helpful links to help you get started with Ajaxify Comments (docs):
 
 1. <a href="https://docs.dlxplugins.com/v/ajaxify-comments/first-time-users/getting-started">Getting Started Guide</a>
 2. <a href="https://docs.dlxplugins.com/v/ajaxify-comments/advanced-topics/lazy-loading-comments">Lazy Loading Comments</a>
@@ -47,15 +47,20 @@ Please use the native WordPress comment system with Ajaxify Comments.
 
 The plugin has integrations with:
 
-1. <a href="https://docs.dlxplugins.com/v/ajaxify-comments/plugin-integrations/confetti">Confetti</a> - Show confetti when a comment is posted.
-2. <a href="https://docs.dlxplugins.com/v/ajaxify-comments/plugin-integrations/comment-edit-core">Comment Edit Core</a> - Allow users to edit their comments.
+1. <a href="https://wordpress.org/plugins/confetti/">Confetti</a> - Show confetti when a comment is posted.
+2. <a href="https://wordpress.org/plugins/simple-comment-editing/">Comment Edit Core</a> - Allow users to edit their comments.
+3. <a href="https://dlxplugins.com/plugins/comment-edit-pro/">Comment Edit Pro</a> - Add numerous utilities and automations to your comment section.
 
 The following themes are supported out of the box:
 
 1. <a href="https://wordpress.org/themes/astra/">Astra</a>
-2. Genesis
-3. <a href="https://wordpress.org/themes/ollie/">Ollie</a>
-4. Twenty Ten - Twenty Twenty Three
+2. <a href="https://wordpress.org/themes/blocksy/">Blocksy</a>
+3. Divi
+4. Genesis
+5. <a href="https://wordpress.org/themes/ollie/">Ollie</a>
+6. <a href="https://wordpress.org/themes/generatepress/">GeneratePress</a>
+7. <a href="https://wordpress.org/themes/neve/">Neve</a>
+8. Twenty Ten - Twenty Twenty Three
 
 Ajaxify Comments should be compatible with most block themes. If <a href="https://docs.dlxplugins.com/v/ajaxify-comments/first-time-users/menu-helper">Menu Helper</a> can't find the selectors, please leave a support request.
 
@@ -71,7 +76,7 @@ Ajaxify Comments is community supported. If you would like to add or change anyt
 
 * Post comments without a page reload.
 * Show error messages without a page reload.
-* Lazy load comments.
+* Lazy load comments, compatible with most themes, including block theme and inline loading.
 * Automatically refresh comments.
 * Comment form validation.
 * Support for pages with multiple comment forms.
@@ -90,7 +95,7 @@ Please use the <a href="https://wordpress.org/support/plugin/wp-ajaxify-comments
 
 === Credits ===
 
-This plugin was initially developed by Jan Jonas starting in 2012. Company <a href="https://weweave.net/">weweave</a> maintained the plugin from 2014-2022.
+This plugin was initially developed by Jan Jonas starting in 2012. Company <a href="https://weweave.net/">weweave</a> maintained the plugin from 2014-2022. The plugin is currently supported by Ronald Huereca of <a href="https://dlxplugins.com">DLX Plugins</a>.
 
 == Installation ==
 
@@ -121,10 +126,47 @@ Lazy Loading is an advanced topic, but we've put together <a href="https://docs.
 
 == Changelog ==
 
+= 3.0.2 =
+* Released 2024-06-24
+* Bug fix: resolving PHP warnings if scripts are being enqueued twice (conflict with TOC Plus plugin).
+
+= 3.0.1 =
+* Released 2024-06-22
+* Bug fix: Comments would not lazy load if set to non-inline mode with DomReady as the trigger.
+* Bug fix: Inline lazy loading button did not honor its saved label.
+
+= 3.0.0 =
+* Released 2024-06-07
+* New feature: Added inline lazy loading option. Inline lazy loading supports a loading spinner, a loading skeleton, and a loading button. Alternatively, you can use a shortcode as a loading indicator for custom output.
+* New feature: Admin options for building a loading spinner, a loading button, and loading skeleton.
+* Bug fix: Compatibility fix with DCO Comment Attachment and multipart forms.
+* Bug fix: Ajaxify Comments only loads when its needed now.
+* Misc: Added more compatible plugins to the Integrations tab.
+
+= 2.2.2 =
+* Released 2024-04-21
+* Removing WP Hooks dependency to prevent extra JS from loading.
+
+= 2.2.1 =
+* Released 2024-04-17
+* Bug fix: Fixing JS error with missing wp hooks dependency.
+
+= 2.2.0 =
+* Released 2024-04-10
+* Added responsive support to the message overlay in the admin.
+* Added preview support for the new responsive overlay in the admin.
+* Addeed frontend support for the new responsive overlay.
+* Added bottom and vertical-center alignment options for the message overlay.
+* Added overall overlay background color option.
+* The overlay is much easier to style now thanks to CSS variables.
+* Added Blocksy theme support for the selector helper.
+
 = 2.1.1 =
 * Released 2023-12-01
 * Fixing issue with Ajaxify loading on all pages.
 * Added better error messages for third-party plugins who use wp_die to display errors.
+* Added support for Comment Edit Pro.
+* <a href="https://dlxplugins.com/announcements/ajaxify-comments-and-comment-edit-pro-are-now-fully-compatible/">Please read the announcement post.</a>
 
 = 2.1.0 =
 * Released 2023-10-25
@@ -193,5 +235,5 @@ Lazy Loading is an advanced topic, but we've put together <a href="https://docs.
 
 == Upgrade Notice ==
 
-= 2.1.1 =
-Performance improvement to prevent Ajaxify from loading on all pages. Added better error messages for third-party plugins who use wp_die to display errors.
+= 3.0.2 =
+A bug fix for a few PHP warnings when TOC Plus is installed.
