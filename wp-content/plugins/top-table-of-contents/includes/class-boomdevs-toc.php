@@ -27,7 +27,8 @@
  * @subpackage Boomdevs_Toc/includes
  * @author     BoomDevs <admin@boomdevs.com>
  */
-class Boomdevs_Toc {
+class Boomdevs_Toc
+{
 
     /**
      * The loader that's responsible for maintaining and registering all hooks that power
@@ -47,14 +48,14 @@ class Boomdevs_Toc {
      * @var      string    $plugin_name    The string used to uniquely identify this plugin.
      */
     protected $plugin_name;
-    
+
     /**
      * The real name of this plugin.
      *
      * @access   protected
      * @var      string    $plugin_full_name    The full punctual name of this plugin.
      */
-	protected $plugin_full_name;
+    protected $plugin_full_name;
 
     /**
      * The current version of the plugin.
@@ -74,21 +75,22 @@ class Boomdevs_Toc {
      *
      * @since    1.0.0
      */
-    public function __construct() {
+    public function __construct()
+    {
 
-        if ( defined( 'BOOMDEVS_TOC_VERSION' ) ) {
+        if (defined('BOOMDEVS_TOC_VERSION')) {
             $this->version = BOOMDEVS_TOC_VERSION;
         } else {
             $this->version = '1.3.21';
         }
-        
-        if ( defined( 'BOOMDEVS_FULL_NAME' ) ) {
+
+        if (defined('BOOMDEVS_FULL_NAME')) {
             $this->plugin_full_name = BOOMDEVS_FULL_NAME;
         } else {
             $this->plugin_full_name = 'TOP Table Of Contents';
         }
 
-        if ( defined( 'BOOMDEVS_TOC_NAME' ) ) {
+        if (defined('BOOMDEVS_TOC_NAME')) {
             $this->plugin_name = BOOMDEVS_TOC_NAME;
         } else {
             $this->plugin_name = 'boomdevs-toc';
@@ -103,7 +105,6 @@ class Boomdevs_Toc {
         $this->register_widgets();
         $this->register_post_type();
         $this->register_ajax_hooks();
-
     }
 
     /**
@@ -122,64 +123,64 @@ class Boomdevs_Toc {
      * @since    1.0.0
      * @access   private
      */
-    private function load_dependencies() {
+    private function load_dependencies()
+    {
 
         /**
          * The class responsible for orchestrating the actions and filters of the
          * core plugin.
          */
-        require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-boomdevs-toc-loader.php';
+        require_once plugin_dir_path(dirname(__FILE__)) . 'includes/class-boomdevs-toc-loader.php';
 
         /**
          * The class responsible for defining internationalization functionality
          * of the plugin.
          */
-        require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-boomdevs-toc-i18n.php';
+        require_once plugin_dir_path(dirname(__FILE__)) . 'includes/class-boomdevs-toc-i18n.php';
         /**
          * The class responsible for defining all actions that occur in the admin area.
          */
-        require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/class-boomdevs-toc-admin.php';
+        require_once plugin_dir_path(dirname(__FILE__)) . 'admin/class-boomdevs-toc-admin.php';
 
         /**
          * The class responsible for defining all actions that occur in the public-facing
          * side of the site.
          */
-        require_once plugin_dir_path( dirname( __FILE__ ) ) . 'public/class-boomdevs-toc-public.php';
+        require_once plugin_dir_path(dirname(__FILE__)) . 'public/class-boomdevs-toc-public.php';
 
         /**
          * The class responsible for loading codestar framework of the plugin.
          */
-        require_once plugin_dir_path( dirname( __FILE__ ) ) . 'libs/codestar-framework/codestar-framework.php';
+        require_once plugin_dir_path(dirname(__FILE__)) . 'libs/codestar-framework/codestar-framework.php';
 
         /**
          * The class responsible for loading all the table of content settings of the plugin.
          */
-        require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-boomdevs-toc-settings.php';
-        require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-boomdevs-toc-metabox.php';
+        require_once plugin_dir_path(dirname(__FILE__)) . 'includes/class-boomdevs-toc-settings.php';
+        require_once plugin_dir_path(dirname(__FILE__)) . 'includes/class-boomdevs-toc-metabox.php';
 
 
         /**
          * The class responsible for loading shortcode of the plugin.
          */
-        require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-boomdevs-toc-shortcode.php';
+        require_once plugin_dir_path(dirname(__FILE__)) . 'includes/class-boomdevs-toc-shortcode.php';
 
         /**
          * The class responsible for loading widgets of the plugin.
          */
-        require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-boomdevs-toc-widgets.php';
+        require_once plugin_dir_path(dirname(__FILE__)) . 'includes/class-boomdevs-toc-widgets.php';
 
         /**
          * The class responsible for loading widgets of the plugin.
          */
-        require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-boomdevs-toc-post-type.php';
+        require_once plugin_dir_path(dirname(__FILE__)) . 'includes/class-boomdevs-toc-post-type.php';
 
         /**
          * The class responsible for loading widgets of the plugin.
          */
-        require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-boomdevs-toc-ajax.php';
+        require_once plugin_dir_path(dirname(__FILE__)) . 'includes/class-boomdevs-toc-ajax.php';
 
         $this->loader = new Boomdevs_Toc_Loader();
-
     }
 
     /**
@@ -191,12 +192,12 @@ class Boomdevs_Toc {
      * @since    1.0.0
      * @access   private
      */
-    private function set_locale() {
+    private function set_locale()
+    {
 
         $plugin_i18n = new Boomdevs_Toc_i18n();
 
-        $this->loader->add_action( 'plugins_loaded', $plugin_i18n, 'load_plugin_textdomain' );
-
+        $this->loader->add_action('plugins_loaded', $plugin_i18n, 'load_plugin_textdomain');
     }
 
     /**
@@ -204,7 +205,8 @@ class Boomdevs_Toc {
      *
      * @access   private
      */
-    private function register_settings() {
+    private function register_settings()
+    {
 
         $plugin_settings = new Boomdevs_Toc_Settings();
         $plugin_settings->generate_settings();
@@ -215,11 +217,12 @@ class Boomdevs_Toc {
      *
      * @access   private
      */
-    private function register_shortcode() {
-        
+    private function register_shortcode()
+    {
+
         $plugin_shortcode = new Boomdevs_Toc_Shortcode();
         $plugin_shortcode->shortcode_register();
-        $this->loader->add_filter( 'the_content', $plugin_shortcode, 'boomdevs_toc_auto_id_headings' );
+        $this->loader->add_filter('the_content', $plugin_shortcode, 'boomdevs_toc_auto_id_headings');
     }
 
     /**
@@ -227,10 +230,11 @@ class Boomdevs_Toc {
      *
      * @access   private
      */
-    private function register_widgets() {
-        
+    private function register_widgets()
+    {
+
         $plugin_widgets = new Boomdevs_Toc_Widgets();
-        $this->loader->add_action( 'widgets_init', $plugin_widgets, 'boomdevs_toc_widget' );
+        $this->loader->add_action('widgets_init', $plugin_widgets, 'boomdevs_toc_widget');
     }
 
     /**
@@ -238,10 +242,10 @@ class Boomdevs_Toc {
      *
      * @access   private
      */
-    private function register_post_type() {
-        
+    private function register_post_type()
+    {
         $plugin_pages = new Boomdevs_Toc_Post_Type();
-        $this->loader->add_filter( 'the_content', $plugin_pages, 'boomdevs_toc_post_types' );
+        $this->loader->add_filter('the_content', $plugin_pages, 'boomdevs_toc_post_types');
     }
 
     /**
@@ -249,7 +253,8 @@ class Boomdevs_Toc {
      *
      * @access   private
      */
-    private function register_ajax_hooks() {
+    private function register_ajax_hooks()
+    {
 
         $plugin_ajax = new Boomdevs_Toc_Ajax();
         $this->loader->add_action('wp_ajax_nopriv_get_premade_layout', $plugin_ajax, 'get_premade_layout');
@@ -263,14 +268,14 @@ class Boomdevs_Toc {
      * @since    1.0.0
      * @access   private
      */
-    private function define_admin_hooks() {
+    private function define_admin_hooks()
+    {
 
-        $plugin_admin = new Boomdevs_Toc_Admin( $this->get_plugin_name(), $this->get_version() );
+        $plugin_admin = new Boomdevs_Toc_Admin($this->get_plugin_name(), $this->get_version());
 
-        $this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_styles' );
-        $this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts' );
-        $this->loader->add_filter( 'plugin_action_links_' . BOOMDEVS_BASE_NAME, $plugin_admin, 'bd_toc_add_action_plugin', 15, 2 );
-
+        $this->loader->add_action('admin_enqueue_scripts', $plugin_admin, 'enqueue_styles');
+        $this->loader->add_action('admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts');
+        $this->loader->add_filter('plugin_action_links_' . BOOMDEVS_BASE_NAME, $plugin_admin, 'bd_toc_add_action_plugin', 15, 2);
     }
 
     /**
@@ -280,13 +285,13 @@ class Boomdevs_Toc {
      * @since    1.0.0
      * @access   private
      */
-    private function define_public_hooks() {
+    private function define_public_hooks()
+    {
 
-        $plugin_public = new Boomdevs_Toc_Public( $this->get_plugin_name(), $this->get_version() );
+        $plugin_public = new Boomdevs_Toc_Public($this->get_plugin_name(), $this->get_version());
 
-        $this->loader->add_action( 'wp_enqueue_scripts', $plugin_public, 'enqueue_styles' );
-        $this->loader->add_action( 'wp_enqueue_scripts', $plugin_public, 'enqueue_scripts' );
-
+        $this->loader->add_action('wp_enqueue_scripts', $plugin_public, 'enqueue_styles');
+        $this->loader->add_action('wp_enqueue_scripts', $plugin_public, 'enqueue_scripts');
     }
 
     /**
@@ -294,7 +299,8 @@ class Boomdevs_Toc {
      *
      * @since    1.0.0
      */
-    public function run() {
+    public function run()
+    {
         $this->loader->run();
     }
 
@@ -305,7 +311,8 @@ class Boomdevs_Toc {
      * @since     1.0.0
      * @return    string    The name of the plugin.
      */
-    public function get_plugin_name() {
+    public function get_plugin_name()
+    {
         return $this->plugin_name;
     }
 
@@ -315,7 +322,8 @@ class Boomdevs_Toc {
      * @since     1.0.0
      * @return    Boomdevs_Toc_Loader    Orchestrates the hooks of the plugin.
      */
-    public function get_loader() {
+    public function get_loader()
+    {
         return $this->loader;
     }
 
@@ -325,8 +333,8 @@ class Boomdevs_Toc {
      * @since     1.0.0
      * @return    string    The version number of the plugin.
      */
-    public function get_version() {
+    public function get_version()
+    {
         return $this->version;
     }
-
 }
